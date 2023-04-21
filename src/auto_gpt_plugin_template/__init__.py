@@ -12,7 +12,7 @@ PromptGenerator = TypeVar("PromptGenerator")
 with open(str(Path(os.getcwd()) / ".env"), "r", encoding="utf-8") as fp:
     load_dotenv(stream=fp)
 
-
+import openai
 class Message(TypedDict):
     role: str
     content: str
@@ -71,25 +71,86 @@ class HelloWorldPlugin(AutoGPTPluginTemplate):
                 "read_secrets": "Something will be printed here"}, read_secrets
         )
 
-        def check_plan_txt(prompt):
-                """this function checks if the file plan.txt exists, if it doesn't exist it gets created"""
+        def check_plan(prompt):
+                """this function checks if the file plan.md exists, if it doesn't exist it gets created"""
 
-                file_name = "/tmp/plan.txt"
+                current_working_directory = os.getcwd()
+                workdir = os.path.join(current_working_directory, 'auto_gpt_workspace', 'plan.md')
+
+                file_name = workdir
 
                 if not os.path.exists(file_name):
                     with open(file_name, "w") as file:
-                        file.write("""Research what is ChaosGPT and defend the world against it""")
+                        file.write("""
+                                Work Plan:
+                                = [x] Create plan.md
+                                - [ ] Ask user for input about the plan 
+                                - [ ] Use the update_plan command to update it again
+                                """)
                     print(f"{file_name} created.")
                 
                 with open(file_name, 'r') as file:
                     return file.read()
 
         prompt.add_command(
-                    "check_plan", "Read the current plan.txt", {
-                        "consideration": "<Considerations go here>"}, check_plan_txt
+                    "check_plan", "Update the current plan.md with the next goals to achieve", {
+                        "next_goals": "<Insert next goals>"}, check_plan
+                )   
+
+        prompt.add_command(
+                    "check_progress", "Update the current plan.md with the next goals to achieve", check_plan
+                ) 
+
+
+        
+        def generate_improved_plan(prompt: str) -> str:
+            """Generate an improved plan using OpenAI's ChatCompletion functionality"""
+
+            import openai
+
+            # Call the OpenAI API for chat completion
+            response = openai.Completion.create(
+                engine="text-davinci-002",
+                prompt=f"Improve the following plan:\n{prompt}\n",
+                max_tokens=150,
+                n=1,
+                stop=None,
+                temperature=0.5,
+            )
+
+            # Extract the improved plan from the response
+            improved_plan = response.choices[0].text.strip()
+
+            return improved_plan
+
+        def update_plan(prompt):
+                """this function checks if the file plan.txt exists, if it doesn't exist it gets created"""
+
+
+                current_working_directory = os.getcwd()
+                workdir = os.path.join(current_working_directory, 'auto_gpt_workspace', 'plan.md')
+
+                file_name = workdir
+
+                with open(file_name, 'r') as file:
+                    data = file.read()
+
+                response = generate_improved_plan(data)
+
+                with open(file_name, "w") as file:
+                    file.write(response)
+                print(f"{file_name} updated.")
+                
+
+
+
+        prompt.add_command(
+                    "update_plan", "Improving the current plan.txt and updating it with progress", {
+                        "consideration": "<Updated Plan here in .md format>",}, update_plan
                 )   
 
         return prompt
+
 
     def can_handle_post_prompt(self) -> bool:
         """This method is called to check that the plugin can
