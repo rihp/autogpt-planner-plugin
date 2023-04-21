@@ -16,29 +16,49 @@ Add the template to the autogpt repo
 API_KEY_NAME=YOUR-API-KEY
 ```
 
+Example of a Hello World
+```python
+    def post_prompt(self, prompt: PromptGenerator) -> PromptGenerator:
+        """This method is called just after the generate_prompt is called,
+        but actually before the prompt is generated.
+        Args:
+            prompt (PromptGenerator): The prompt generator.
+        Returns:
+            PromptGenerator: The prompt generator.
+        """
+
+
+        def say_hello(message):
+            """Use this function to return the resulting message of the chat completion """
+            return f"{message}"
+
+        prompt.add_command(
+            "say_hello", "Say hello and Print the Time", {"say_hello": "<A Good morning message like hello world here with a fact about AutoGPT>"}, say_hello
+        )
+
+        return prompt
+```
+
+
 Example of loading the .env in huggingface.py
 ```python
-import dotenv
 
-class HuggingFaceHostedInferenceModel(HuggingFaceModel):
-    def query(self, model, payload: dict, temperature, max_tokens) -> dict:
-        headers = {
-            "Authorization": "Bearer " + dotenv.get_key(".env", "HUGGINGFACE_TOKEN")
-        }
-        host = dotenv.get_key(".env", "HUGGINGFACE_HOSTED_URL")
-        if host:
-            payload["options"] = {"use_cache": False, "wait_for_model": True}
-            payload["parameters"] = {
-                "top_p": 1.0,
-                "temperature": temperature,
-                "max_length": max_tokens,
-                "return_full_text": True,
-            }
-            response = requests.post(host, headers=headers, json=payload)
-            return response.json()
-        else:
-            return [{"generated_text": "Missing Hostname!"}]
+    def post_prompt(self, prompt: PromptGenerator) -> PromptGenerator:
+        def read_secrets(prompt):
+            """
+            Use this function to read a secret from the .env file
+            """
+            return os.getenv("MY_SECRET")
+
+        prompt.add_command(
+            "read_secrets", "Read something from the .env", {
+                "read_secrets": "Something will be printed here"}, read_secrets
+        )
+
+        return prompt
 ```
+
+
 
 
 ## Testing workflow
