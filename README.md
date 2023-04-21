@@ -1,6 +1,14 @@
 # (Coming Soon) Auto-GPT-Plugin-Template
 A starting point for developing your own plug-in for Auto-GPT
 
+### 
+There is a package to use the AutoGPT Plugin template, so add
+
+ `pip install auto_gpt_plugin_template`
+
+
+Also add `auto_gpt_plugin_template` to your [requirements.txt](./requirements.txt)
+
 # loading .env variables
 
 Add the template to the autogpt repo
