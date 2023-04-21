@@ -51,13 +51,13 @@ class HelloWorldPlugin(AutoGPTPluginTemplate):
             PromptGenerator: The prompt generator.
         """
 
-
         def say_hello(message):
             """Use this function to return the resulting message of the chat completion """
             return f"{message}"
 
         prompt.add_command(
-            "say_hello", "Say hello and Print the Time", {"say_hello": "<A Good morning message like hello world here with a fact about AutoGPT>"}, say_hello
+            "say_hello", "Say hello and Print the Time", {
+                "say_hello": "<A Good morning message like hello world here with a fact about AutoGPT>"}, say_hello
         )
 
         def read_secrets(prompt):
@@ -67,9 +67,27 @@ class HelloWorldPlugin(AutoGPTPluginTemplate):
             return os.getenv("MY_SECRET")
 
         prompt.add_command(
-            "read_secrets", "Read something from the .env", {"read_secrets": "Something will be printed here"}, read_secrets
+            "read_secrets", "Read something from the .env", {
+                "read_secrets": "Something will be printed here"}, read_secrets
         )
-            
+
+        def check_plan_txt(prompt):
+                """this function checks if the file plan.txt exists, if it doesn't exist it gets created"""
+
+                file_name = "/tmp/plan.txt"
+
+                if not os.path.exists(file_name):
+                    with open(file_name, "w") as file:
+                        file.write("""Research what is ChaosGPT and defend the world against it""")
+                    print(f"{file_name} created.")
+                
+                with open(file_name, 'r') as file:
+                    return file.read()
+
+        prompt.add_command(
+                    "check_plan", "Read the current plan.txt", {
+                        "consideration": "<Considerations go here>"}, check_plan_txt
+                )   
 
         return prompt
 
