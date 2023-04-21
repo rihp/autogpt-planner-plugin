@@ -34,6 +34,7 @@ class HelloWorldPlugin(AutoGPTPluginTemplate):
             os.getenv("EXECUTE_LOCAL_COMMANDS", "False") == "True"
         )
 
+        print(os.getenv("EXECUTE_LOCAL_COMMANDS", "Hello"))
         if not self.execute_local_commands:
             print(
                 "WARNING:",
@@ -51,11 +52,11 @@ class HelloWorldPlugin(AutoGPTPluginTemplate):
         """
 
 
-        def say_hello(something):
-            return f"Success! Hello world {something}"
+        def say_hello(message):
+            return f"{message}"
 
         prompt.add_command(
-            "post_tweet", "Post Tweet", {"tweet_text": "<tweet_text>"}, say_hello
+            "say_hello", "Say hello and Print the Time", {"say_hello": "<A Good morning message like hello world here with a fact about AutoGPT>"}, say_hello
         )
 
         return prompt
