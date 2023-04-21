@@ -53,11 +53,23 @@ class HelloWorldPlugin(AutoGPTPluginTemplate):
 
 
         def say_hello(message):
+            """Use this function to return the resulting message of the chat completion """
             return f"{message}"
 
         prompt.add_command(
             "say_hello", "Say hello and Print the Time", {"say_hello": "<A Good morning message like hello world here with a fact about AutoGPT>"}, say_hello
         )
+
+        def read_secrets(prompt):
+            """
+            Use this function to read a secret from the .env file
+            """
+            return os.getenv("MY_SECRET")
+
+        prompt.add_command(
+            "read_secrets", "Read something from the .env", {"read_secrets": "Something will be printed here"}, read_secrets
+        )
+            
 
         return prompt
 
