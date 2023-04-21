@@ -1,7 +1,10 @@
 # (Coming Soon) Auto-GPT-Plugin-Template
 A starting point for developing your own plug-in for Auto-GPT
 
-### 
+### Getting started
+
+After you clone the template from the original repo (https://github.com/Significant-Gravitas/Auto-GPT-Plugin-Template)
+
 There is a package to use the AutoGPT Plugin template, so add
 
  `pip install auto_gpt_plugin_template`
@@ -9,12 +12,14 @@ There is a package to use the AutoGPT Plugin template, so add
 
 Also add `auto_gpt_plugin_template` to your [requirements.txt](./requirements.txt)
 
-# loading .env variables
+in the `__init__.py` add this to the imports:
+ `from auto_gpt_plugin_template import AutoGPTPluginTemplate`
 
-Add the template to the autogpt repo
-```
-API_KEY_NAME=YOUR-API-KEY
-```
+And change the class like this:
+
+ `class HelloWorldPlugin(AutoGPTPluginTemplate)`
+
+## CODE SAMPLES
 
 Example of a Hello World
 ```python
@@ -63,7 +68,7 @@ Example of loading the .env in huggingface.py
 
 ## Testing workflow
 
-Create something like this 
+Create something like this and run it through the CLI
 ```
 cd ../Auto-GPT-Plugins && zip -ru ../Auto-GPT/plugins/Auto-GPT-Plugins.zip . ; ../Auto-GPT && python3 -m autogpt --debug
 ```
