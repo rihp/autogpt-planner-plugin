@@ -12,7 +12,6 @@ PromptGenerator = TypeVar("PromptGenerator")
 with open(str(Path(os.getcwd()) / ".env"), "r", encoding="utf-8") as fp:
     load_dotenv(stream=fp)
 
-import openai
 class Message(TypedDict):
     role: str
     content: str
@@ -34,13 +33,17 @@ class HelloWorldPlugin(AutoGPTPluginTemplate):
             os.getenv("EXECUTE_LOCAL_COMMANDS", "False") == "True"
         )
 
-        print(os.getenv("EXECUTE_LOCAL_COMMANDS", "Hello"))
         if not self.execute_local_commands:
             print(
                 "WARNING:",
                 "SystemInformationPlugin: EXECUTE_LOCAL_COMMANDS is false. "
                 "System information will not be added to the context.",
             )
+
+
+        
+    
+
 
     def post_prompt(self, prompt: PromptGenerator) -> PromptGenerator:
         """This method is called just after the generate_prompt is called,
@@ -56,22 +59,30 @@ class HelloWorldPlugin(AutoGPTPluginTemplate):
             return f"{message}"
 
         prompt.add_command(
-            "say_hello", "Say hello and Print the Time", {
+            "say_hello", "Say hello and a fact about AutoGPT", {
                 "say_hello": "<A Good morning message like hello world here with a fact about AutoGPT>"}, say_hello
         )
 
-        def read_secrets(prompt):
+        def get_time(message):
+            """Use this function to return the current time"""
+            return f"{message}"
+
+        prompt.add_command(
+            "get_time", "Return the current time", {
+                "get_time": "<Current time>"}, get_time
+        )
+
+        def read_secrets():
             """
             Use this function to read a secret from the .env file
             """
             return os.getenv("MY_SECRET")
 
         prompt.add_command(
-            "read_secrets", "Read something from the .env", {
-                "read_secrets": "Something will be printed here"}, read_secrets
+            "read_secrets", "Read something from the .env", {}, read_secrets
         )
 
-        def check_plan(prompt):
+        def check_plan():
                 """this function checks if the file plan.md exists, if it doesn't exist it gets created"""
 
                 current_working_directory = os.getcwd()
@@ -93,13 +104,9 @@ class HelloWorldPlugin(AutoGPTPluginTemplate):
                     return file.read()
 
         prompt.add_command(
-                    "check_plan", "Update the current plan.md with the next goals to achieve", {
-                        "next_goals": "<Insert next goals>"}, check_plan
+                    "check_plan", "Read the plan.md with the next goals to achieve", {}, check_plan
                 )   
 
-        prompt.add_command(
-                    "check_progress", "Update the current plan.md with the next goals to achieve", check_plan
-                ) 
 
 
         
@@ -111,7 +118,7 @@ class HelloWorldPlugin(AutoGPTPluginTemplate):
             # Call the OpenAI API for chat completion
             response = openai.Completion.create(
                 engine="text-davinci-002",
-                prompt=f"Improve the following plan:\n{prompt}\n",
+                prompt=f"Improve the following plan, keep the .md format, add more crucial points:\n{prompt}\n",
                 max_tokens=150,
                 n=1,
                 stop=None,
