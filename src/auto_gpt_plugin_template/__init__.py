@@ -77,7 +77,7 @@ class HelloWorldPlugin(AutoGPTPluginTemplate):
             Use this function to read a secret from the .env file
             """
             return os.getenv("MY_SECRET")
-
+        
         prompt.add_command(
             "read_secrets", "Read something from the .env", {}, read_secrets
         )
@@ -86,7 +86,7 @@ class HelloWorldPlugin(AutoGPTPluginTemplate):
                 """this function checks if the file plan.md exists, if it doesn't exist it gets created"""
 
                 current_working_directory = os.getcwd()
-                workdir = os.path.join(current_working_directory, 'auto_gpt_workspace', 'plan.md')
+                workdir = os.path.join(current_working_directory, 'autogpt', 'auto_gpt_workspace', 'plan.md')
 
                 file_name = workdir
 
@@ -107,35 +107,40 @@ class HelloWorldPlugin(AutoGPTPluginTemplate):
                     "check_plan", "Read the plan.md with the next goals to achieve", {}, check_plan
                 )   
 
-
-
-        
         def generate_improved_plan(prompt: str) -> str:
             """Generate an improved plan using OpenAI's ChatCompletion functionality"""
 
             import openai
-
+            print(prompt)
+            print(dir(prompt))
             # Call the OpenAI API for chat completion
-            response = openai.Completion.create(
-                engine="text-davinci-002",
-                prompt=f"Improve the following plan, keep the .md format, add more crucial points:\n{prompt}\n",
-                max_tokens=150,
+            response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are an assistant that improves and adds crucial points to plans in .md format."
+                    },
+                    {
+                        "role": "user",
+                        "content": f"Improve the following plan, keep the .md format, add more crucial points:\n{prompt}\nImproved version:"
+                    },
+                ],
+                max_tokens=1500,
                 n=1,
-                stop=None,
                 temperature=0.5,
             )
 
             # Extract the improved plan from the response
-            improved_plan = response.choices[0].text.strip()
-
+            improved_plan = response.choices[0].message.content.strip()
             return improved_plan
 
-        def update_plan(prompt):
-                """this function checks if the file plan.txt exists, if it doesn't exist it gets created"""
+        def update_plan():
+                """this function checks if the file plan.md exists, if it doesn't exist it gets created"""
 
 
                 current_working_directory = os.getcwd()
-                workdir = os.path.join(current_working_directory, 'auto_gpt_workspace', 'plan.md')
+                workdir = os.path.join(current_working_directory, 'autogpt', 'auto_gpt_workspace', 'plan.md')
 
                 file_name = workdir
 
@@ -147,14 +152,16 @@ class HelloWorldPlugin(AutoGPTPluginTemplate):
                 with open(file_name, "w") as file:
                     file.write(response)
                 print(f"{file_name} updated.")
-                
-
-
+            
+                return response
 
         prompt.add_command(
-                    "update_plan", "Improving the current plan.txt and updating it with progress", {
-                        "consideration": "<Updated Plan here in .md format>",}, update_plan
+                    "run_planning_cycle", "Improves the current plan.md and updates it with progress", {}, update_plan
                 )   
+
+        print(dir(prompt))
+        print(prompt.constraints)
+        print(prompt.commands)
 
         return prompt
 
