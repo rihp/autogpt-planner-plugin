@@ -1,51 +1,83 @@
-# (Coming Soon) Auto-GPT-Plugin-Template
-A starting point for developing your own plug-in for Auto-GPT
+# Planner Plugin
+Simple planning commands for planning leveraged with chatgpt3.5
 
 ### Getting started
 
-After you clone the template from the original repo (https://github.com/Significant-Gravitas/Auto-GPT-Plugin-Template)
+After you clone the template from the original repo (https://github.com/rihp/autogpt-planner-plugin)
 
-There is a package to use the AutoGPT Plugin template, so add
+# New commands
+```
+prompt.add_command(
+    "check_plan",
+    "Read the plan.md with the next goals to achieve",
+    {},
+    check_plan,
+)
 
- `pip install auto_gpt_plugin_template`
+prompt.add_command(
+    "run_planning_cycle",
+    "Improves the current plan.md and updates it with progress",
+    {},
+    update_plan,
+)
 
+prompt.add_command(
+    "create_task",
+    "creates a task with a task id, description and a completed status of False ",
+    {
+        "task_id": "<int>",
+        "task_description": "<The task that must be performed>",
+    },
+    create_task,
+)
 
-Also add `auto_gpt_plugin_template` to your [requirements.txt](./requirements.txt)
+prompt.add_command(
+    "load_tasks",
+    "Checks out the task ids, their descriptionsand a completed status",
+    {},
+    load_tasks,
+)
 
-in the `__init__.py` add this to the imports:
- `from auto_gpt_plugin_template import AutoGPTPluginTemplate`
-
-And change the class like this:
-
- `class HelloWorldPlugin(AutoGPTPluginTemplate)`
+prompt.add_command(
+    "mark_task_completed",
+    "Updates the status of a task and marks it as completed",
+    {"task_id": "<int>"},
+    update_task_status,
+)
+```
 
 ## CODE SAMPLES
 
-Example of a Hello World
+Example of generating an improved plan
 ```python
-    def post_prompt(self, prompt: PromptGenerator) -> PromptGenerator:
-        """This method is called just after the generate_prompt is called,
-        but actually before the prompt is generated.
-        Args:
-            prompt (PromptGenerator): The prompt generator.
-        Returns:
-            PromptGenerator: The prompt generator.
-        """
+def generate_improved_plan(prompt: str) -> str:
+    """Generate an improved plan using OpenAI's ChatCompletion functionality"""
 
+    import openai
 
-        def say_hello(message):
-            """Use this function to return the resulting message of the chat completion """
-            return f"{message}"
+    tasks = load_tasks()
 
-        prompt.add_command(
-            "say_hello", "Say hello and Print the Time", {"say_hello": "<A Good morning message like hello world here with a fact about AutoGPT>"}, say_hello
-        )
-
-        return prompt
+    # Call the OpenAI API for chat completion
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {
+                "role": "system",
+                "content": "You are an assistant that improves and adds crucial points to plans in .md format.",
+            },
+            {
+                "role": "user",
+                "content": f"Update the following plan given the task status below, keep the .md format:\n{prompt}\nInclude the current tasks in the improved plan, keep mind of their status and track them with a checklist:\n{tasks}\Revised version should comply with the contests of the tasks at hand:",
+            },
+        ],
+        max_tokens=1500,
+        n=1,
+        temperature=0.5,
+    )
 ```
 
 
-Example of loading the .env in huggingface.py
+Example of loading the .env
 ```python
 
     def post_prompt(self, prompt: PromptGenerator) -> PromptGenerator:
