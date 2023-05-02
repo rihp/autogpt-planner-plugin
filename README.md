@@ -5,6 +5,16 @@ Simple planning commands for planning leveraged with chatgpt3.5 and json objects
 
 After you clone the plugin from the original repo (https://github.com/rihp/autogpt-planner-plugin) Add it to the plugins folder of your AutoGPT repo and then run AutoGPT
 
+![image](https://user-images.githubusercontent.com/12145726/235688224-7abf6ae4-5c0a-4e2d-b1b2-18241c6d74b4.png)
+
+Remember to also update your .env to include 
+
+```
+ALLOWLISTED_PLUGINS=planner
+```
+
+
+
 # New commands
 ```
 prompt.add_command(
