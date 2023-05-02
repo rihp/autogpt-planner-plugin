@@ -1,9 +1,9 @@
-# Planner Plugin
-Simple planning commands for planning leveraged with chatgpt3.5
+# AutoGPT Planner Plugin
+Simple planning commands for planning leveraged with chatgpt3.5 and json objects to keep track of its progress on a list of tasks.
 
 ### Getting started
 
-After you clone the template from the original repo (https://github.com/rihp/autogpt-planner-plugin)
+After you clone the plugin from the original repo (https://github.com/rihp/autogpt-planner-plugin) Add it to the plugins folder of your AutoGPT repo and then run AutoGPT
 
 # New commands
 ```
@@ -76,8 +76,8 @@ def generate_improved_plan(prompt: str) -> str:
     )
 ```
 
-
-Example of loading the .env
+# Potential Improvements 
+Example of loading an .env
 ```python
 
     def post_prompt(self, prompt: PromptGenerator) -> PromptGenerator:
@@ -95,12 +95,14 @@ Example of loading the .env
         return prompt
 ```
 
-
-
-
 ## Testing workflow
 
-Create something like this and run it through the CLI
+Clone the repo and modify the functionality, when you're done you can run 
 ```
-cd ../Auto-GPT-Plugins && zip -ru ../Auto-GPT/plugins/Auto-GPT-Plugins.zip . ; ../Auto-GPT && python3 -m autogpt --debug
+zip -ru ../fork/plugins/planner.zip . ; cd ../fork && python3 -m autogpt --debug 
+```
+
+then you need to cd back to 
+```
+cd ../autogpt-planner-plugin    
 ```
