@@ -7,18 +7,20 @@ from typing import Any, Dict, List, Optional, Tuple, TypedDict, TypeVar
 from auto_gpt_plugin_template import AutoGPTPluginTemplate
 from dotenv import load_dotenv
 
+from .planner import check_plan, create_task, load_tasks, update_task_status, update_plan
 
 PromptGenerator = TypeVar("PromptGenerator")
 
 with open(str(Path(os.getcwd()) / ".env"), "r", encoding="utf-8") as fp:
     load_dotenv(stream=fp)
 
+
 class Message(TypedDict):
     role: str
     content: str
 
 
-class HelloWorldPlugin(AutoGPTPluginTemplate):
+class PlannerPlugin(AutoGPTPluginTemplate):
     """
     This is a system information plugin for Auto-GPT which
     adds the system information to the prompt.
@@ -41,11 +43,6 @@ class HelloWorldPlugin(AutoGPTPluginTemplate):
                 "System information will not be added to the context.",
             )
 
-
-        
-    
-
-
     def post_prompt(self, prompt: PromptGenerator) -> PromptGenerator:
         """This method is called just after the generate_prompt is called,
         but actually before the prompt is generated.
@@ -55,156 +52,43 @@ class HelloWorldPlugin(AutoGPTPluginTemplate):
             PromptGenerator: The prompt generator.
         """
 
-        def check_plan():
-                """this function checks if the file plan.md exists, if it doesn't exist it gets created"""
-
-                current_working_directory = os.getcwd()
-                workdir = os.path.join(current_working_directory, 'autogpt', 'auto_gpt_workspace', 'plan.md')
-
-                file_name = workdir
-
-                if not os.path.exists(file_name):
-                    with open(file_name, "w") as file:
-                        file.write("""
-                        # Task List and status:
-
-                        - [ ] Task description here
-                        - [ ] Second task description goes here
-                                """)
-                    print(f"{file_name} created.")
-                
-                with open(file_name, 'r') as file:
-                    return file.read()
+        prompt.add_command(
+            "check_plan",
+            "Read the plan.md with the next goals to achieve",
+            {},
+            check_plan,
+        )
 
         prompt.add_command(
-                    "check_plan", "Read the plan.md with the next goals to achieve", {}, check_plan
-                )   
-
-        def generate_improved_plan(prompt: str) -> str:
-            """Generate an improved plan using OpenAI's ChatCompletion functionality"""
-
-            import openai
-            print(prompt)
-            print(dir(prompt))
-
-            tasks = load_tasks()
-
-            # Call the OpenAI API for chat completion
-            response = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": "You are an assistant that improves and adds crucial points to plans in .md format."
-                    },
-                    {
-                        "role": "user",
-                        "content": f"Update the following plan given the task status below, keep the .md format:\n{prompt}\nInclude the current tasks in the improved plan, keep mind of their status and track them with a checklist:\n{tasks}\Revised version should comply with the contests of the tasks at hand:"
-                    },
-                ],
-                max_tokens=1500,
-                n=1,
-                temperature=0.5,
-            )
-
-            # Extract the improved plan from the response
-            improved_plan = response.choices[0].message.content.strip()
-            return improved_plan
-
-        def update_plan():
-                """this function checks if the file plan.md exists, if it doesn't exist it gets created"""
-
-
-                current_working_directory = os.getcwd()
-                workdir = os.path.join(current_working_directory, 'autogpt', 'auto_gpt_workspace', 'plan.md')
-
-                file_name = workdir
-
-                with open(file_name, 'r') as file:
-                    data = file.read()
-
-                response = generate_improved_plan(data)
-
-                with open(file_name, "w") as file:
-                    file.write(response)
-                print(f"{file_name} updated.")
-            
-                return response
+            "run_planning_cycle",
+            "Improves the current plan.md and updates it with progress",
+            {},
+            update_plan,
+        )
 
         prompt.add_command(
-                    "run_planning_cycle", "Improves the current plan.md and updates it with progress", {}, update_plan
-                )   
-
-        print(dir(prompt))
-        print(prompt.constraints)
-        print(prompt.commands)
-
-        def create_task(task_id=None, task_description:str=None, status=False):
-            task = {"description": task_description, "completed": status}
-            tasks = load_tasks()
-            tasks[str(task_id)] = task
-
-            current_working_directory = os.getcwd()
-            workdir = os.path.join(current_working_directory, 'autogpt', 'auto_gpt_workspace', 'tasks.json')
-            file_name = workdir
-
-            with open(file_name, "w") as f:
-                json.dump(tasks, f)
-
-            return tasks
+            "create_task",
+            "creates a task with a task id, description and a completed status of False ",
+            {
+                "task_id": "<int>",
+                "task_description": "<The task that must be performed>",
+            },
+            create_task,
+        )
 
         prompt.add_command(
-            "create_task", "creates a task with a task id, description and a completed status of False ", 
-            {"task_id": "<int>", "task_description":"<The task that must be performed>"}, create_task
-        )   
-
-        def load_tasks() -> dict:
-            current_working_directory = os.getcwd()
-            workdir = os.path.join(current_working_directory, 'autogpt', 'auto_gpt_workspace', 'tasks.json')
-            file_name = workdir
-
-            if not os.path.exists(file_name):
-                with open(file_name, "w") as f:
-                    f.write("{}")
-
-            with open(file_name) as f:
-                try:
-                    tasks = json.load(f)
-                    if isinstance(tasks, list):
-                        tasks = {}
-                except json.JSONDecodeError:
-                    tasks = {}
-
-            return tasks
+            "load_tasks",
+            "Checks out the task ids, their descriptionsand a completed status",
+            {},
+            load_tasks,
+        )
 
         prompt.add_command(
-            "load_tasks", "Checks out the task ids, their descriptionsand a completed status", 
-            {}, load_tasks
-        )  
-
-        def update_task_status(task_id):
-            tasks = load_tasks()
-
-            if str(task_id) not in tasks:
-                print(f"Task with ID {task_id} not found.")
-                return
-
-            tasks[str(task_id)]['completed'] = True
-
-            current_working_directory = os.getcwd()
-            workdir = os.path.join(current_working_directory, 'autogpt', 'auto_gpt_workspace', 'tasks.json')
-            file_name = workdir
-
-            with open(file_name, "w") as f:
-                json.dump(tasks, f)
-
-            return f"Task with ID {task_id} has been marked as completed."
-
-        
-        prompt.add_command(
-            "mark_task_completed", "Updates the status of a task and marks it as completed", 
-            {"task_id": "<int>"}, update_task_status
-        )  
+            "mark_task_completed",
+            "Updates the status of a task and marks it as completed",
+            {"task_id": "<int>"},
+            update_task_status,
+        )
 
         return prompt
 
