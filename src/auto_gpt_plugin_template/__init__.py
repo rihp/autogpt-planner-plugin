@@ -25,20 +25,10 @@ class PlannerPlugin(AutoGPTPluginTemplate):
 
     def __init__(self):
         super().__init__()
-        self._name = "Auto-GPT-Plugin-SystemInfo"
-        self._version = "0.1.2"
-        self._description = "This is system info plugin for Auto-GPT."
+        self._name = "AutoGPT-Planner-Plugin"
+        self._version = "0.1.0"
+        self._description = "This is a simple task planner module for Auto-GPT."
 
-        self.execute_local_commands = (
-            os.getenv("EXECUTE_LOCAL_COMMANDS", "False") == "True"
-        )
-
-        if not self.execute_local_commands:
-            print(
-                "WARNING:",
-                "SystemInformationPlugin: EXECUTE_LOCAL_COMMANDS is false. "
-                "System information will not be added to the context.",
-            )
 
     def post_prompt(self, prompt: PromptGenerator) -> PromptGenerator:
         """This method is called just after the generate_prompt is called,
