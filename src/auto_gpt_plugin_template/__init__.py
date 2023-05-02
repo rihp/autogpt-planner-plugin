@@ -55,34 +55,6 @@ class HelloWorldPlugin(AutoGPTPluginTemplate):
             PromptGenerator: The prompt generator.
         """
 
-        def say_hello(message):
-            """Use this function to return the resulting message of the chat completion """
-            return f"{message}"
-
-        prompt.add_command(
-            "say_hello", "Say hello and a fact about AutoGPT", {
-                "say_hello": "<A Good morning message like hello world here with a fact about AutoGPT>"}, say_hello
-        )
-
-        def get_time(message):
-            """Use this function to return the current time"""
-            return f"{message}"
-
-        prompt.add_command(
-            "get_time", "Return the current time", {
-                "get_time": "<Current time>"}, get_time
-        )
-
-        def read_secrets():
-            """
-            Use this function to read a secret from the .env file
-            """
-            return os.getenv("MY_SECRET")
-        
-        prompt.add_command(
-            "read_secrets", "Read something from the .env", {}, read_secrets
-        )
-
         def check_plan():
                 """this function checks if the file plan.md exists, if it doesn't exist it gets created"""
 
