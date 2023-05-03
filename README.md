@@ -13,7 +13,7 @@ After you clone the plugin from the original repo (https://github.com/rihp/autog
 Remember to also update your .env to include 
 
 ```
-ALLOWLISTED_PLUGINS=planner
+ALLOWLISTED_PLUGINS=PlannerPlugin
 ```
 
 
