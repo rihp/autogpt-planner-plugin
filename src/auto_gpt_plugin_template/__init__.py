@@ -1,4 +1,6 @@
-"""This is a system information plugin for Auto-GPT."""
+"""This is a task planning system plugin for Auto-GPT. It is able to create tasks, elaborate a plan, improve upon it and check it again to keep on track.
+
+built by @rihp on github"""
 import os
 import json
 from pathlib import Path
@@ -19,8 +21,8 @@ class Message(TypedDict):
 
 class PlannerPlugin(AutoGPTPluginTemplate):
     """
-    This is a system information plugin for Auto-GPT which
-    adds the system information to the prompt.
+    This is a task planner system plugin for Auto-GPT which 
+    adds the task planning commands to the prompt.
     """
 
     def __init__(self):
