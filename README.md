@@ -59,6 +59,15 @@ prompt.add_command(
 )
 ```
 
+# New config options
+By default, the plugin is set ot use what ever your `FAST_LLM_MODEL` environment variable is set to, if none is set it 
+will fall back to `gpt-3.5-turbo`. If you want to set it individually to a different model you can do that by setting
+the environment variable `PLANNER_MODEL` to the model you want to use (example: `gpt-4`).
+
+Similarly, the token limit defaults to the `FAST_TOKEN_LIMIT` environment variable, if none is set it will fall 
+back to `1500`. If you want to set it individually to a different limit for the plugin you can do that by setting
+`PLANNER_TOKEN_LIMIT` to the desired limit (example: `7500`).
+
 ## CODE SAMPLES
 
 Example of generating an improved plan
