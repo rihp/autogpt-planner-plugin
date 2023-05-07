@@ -27,9 +27,9 @@ def check_plan():
     with open(file_name, "r") as file:
         return file.read()
 
+
 def update_plan():
     """this function checks if the file plan.md exists, if it doesn't exist it gets created"""
-
 
     current_working_directory = os.getcwd()
     workdir = os.path.join(current_working_directory, 'autogpt', 'auto_gpt_workspace', 'plan.md')
@@ -46,6 +46,7 @@ def update_plan():
     print(f"{file_name} updated.")
 
     return response
+
 
 def generate_improved_plan(prompt: str) -> str:
     """Generate an improved plan using OpenAI's ChatCompletion functionality"""
