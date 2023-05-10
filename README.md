@@ -19,7 +19,7 @@ ALLOWLISTED_PLUGINS=PlannerPlugin
 
 
 # New commands
-```
+```python
 prompt.add_command(
     "check_plan",
     "Read the plan.md with the next goals to achieve",
@@ -103,24 +103,6 @@ def generate_improved_plan(prompt: str) -> str:
     )
 ```
 
-# Potential Improvements 
-Example of loading an .env
-```python
-
-    def post_prompt(self, prompt: PromptGenerator) -> PromptGenerator:
-        def read_secrets(prompt):
-            """
-            Use this function to read a secret from the .env file
-            """
-            return os.getenv("MY_SECRET")
-
-        prompt.add_command(
-            "read_secrets", "Read something from the .env", {
-                "read_secrets": "Something will be printed here"}, read_secrets
-        )
-
-        return prompt
-```
 
 ## Testing workflow
 
