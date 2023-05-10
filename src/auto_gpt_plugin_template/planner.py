@@ -57,6 +57,7 @@ def generate_improved_plan(prompt: str) -> str:
 
     model = os.getenv('PLANNER_MODEL', os.getenv('FAST_LLM_MODEL', 'gpt-3.5-turbo'))
     max_tokens = os.getenv('PLANNER_TOKEN_LIMIT', os.getenv('FAST_TOKEN_LIMIT', 1500))
+    temperature = os.getenv('PLANNER_TEMPERATURE', os.getenv('TEMPERATURE', 0.5))
 
     # Call the OpenAI API for chat completion
     response = openai.ChatCompletion.create(
@@ -73,7 +74,7 @@ def generate_improved_plan(prompt: str) -> str:
         ],
         max_tokens=int(max_tokens),
         n=1,
-        temperature=0.5,
+        temperature=float(temperature),
     )
 
     # Extract the improved plan from the response
