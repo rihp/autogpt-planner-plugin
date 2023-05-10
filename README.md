@@ -68,6 +68,11 @@ Similarly, the token limit defaults to the `FAST_TOKEN_LIMIT` environment variab
 back to `1500`. If you want to set it individually to a different limit for the plugin you can do that by setting
 `PLANNER_TOKEN_LIMIT` to the desired limit (example: `7500`).
 
+And last, but not least, the temperature used defaults to the `TEMPERATURE` environment variable, if none is set it will 
+fall back to `0.5`. If you want to set it individually to a different temperature for the plugin you can do that by 
+setting `PLANNER_TEMPERATURE` to the desired temperature (example: `0.3`).
+
+
 ## CODE SAMPLES
 
 Example of generating an improved plan
