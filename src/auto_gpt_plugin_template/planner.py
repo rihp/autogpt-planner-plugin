@@ -17,9 +17,11 @@ def check_plan():
             file.write(
                 """
                 # Task List and status:
-
-                - [ ] Task description here
-                - [ ] Second task description goes here
+                - [ ] Create a detailed checklist for the current plan and goals
+                - [ ] Finally, review that every new task is completed
+                
+                ## Notes:
+                - Use the run_planning_cycle command frequently to keep this plan up to date.
                         """
             )
         print(f"{file_name} created.")
@@ -69,7 +71,7 @@ def generate_improved_plan(prompt: str) -> str:
             },
             {
                 "role": "user",
-                "content": f"Update the following plan given the task status below, keep the .md format:\n{prompt}\nInclude the current tasks in the improved plan, keep mind of their status and track them with a checklist:\n{tasks}\Revised version should comply with the contests of the tasks at hand:",
+                "content": f"Update the following plan given the task status below, keep the .md format:\n{prompt}\nInclude the current tasks in the improved plan, keep mind of their status and track them with a checklist:\n{tasks}\Revised version should comply with the contents of the tasks at hand:",
             },
         ],
         max_tokens=int(max_tokens),
