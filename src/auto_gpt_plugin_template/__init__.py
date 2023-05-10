@@ -28,8 +28,8 @@ class PlannerPlugin(AutoGPTPluginTemplate):
     def __init__(self):
         super().__init__()
         self._name = "AutoGPT-Planner-Plugin"
-        self._version = "0.1.0"
-        self._description = "This is a simple task planner module for Auto-GPT."
+        self._version = "0.1.1"
+        self._description = "This is a simple task planner module for Auto-GPT. It adds the run_planning_cycle command along with other task related commands. Creates a plan.md file and tasks.json to manage the workloads. For help and discussion: https://discord.com/channels/1092243196446249134/1098737397094694922/threads/1102780261604790393"
 
 
     def post_prompt(self, prompt: PromptGenerator) -> PromptGenerator:
