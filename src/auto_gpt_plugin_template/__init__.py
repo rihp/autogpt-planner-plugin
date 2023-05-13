@@ -1,9 +1,8 @@
-"""This is a task planning system plugin for Auto-GPT. It is able to create tasks, elaborate a plan, improve upon it and check it again to keep on track.
+"""This is a task planning system plugin for Auto-GPT. It is able to create tasks, elaborate a plan, improve upon it
+and check it again to keep on track.
 
 built by @rihp on github"""
-import os
-import json
-from pathlib import Path
+
 from typing import Any, Dict, List, Optional, Tuple, TypedDict, TypeVar
 
 from auto_gpt_plugin_template import AutoGPTPluginTemplate
@@ -11,7 +10,6 @@ from auto_gpt_plugin_template import AutoGPTPluginTemplate
 from .planner import check_plan, create_task, load_tasks, update_task_status, update_plan
 
 PromptGenerator = TypeVar("PromptGenerator")
-
 
 
 class Message(TypedDict):
@@ -29,8 +27,10 @@ class PlannerPlugin(AutoGPTPluginTemplate):
         super().__init__()
         self._name = "AutoGPT-Planner-Plugin"
         self._version = "0.1.1"
-        self._description = "This is a simple task planner module for Auto-GPT. It adds the run_planning_cycle command along with other task related commands. Creates a plan.md file and tasks.json to manage the workloads. For help and discussion: https://discord.com/channels/1092243196446249134/1098737397094694922/threads/1102780261604790393"
-
+        self._description = "This is a simple task planner module for Auto-GPT. It adds the run_planning_cycle " \
+                            "command along with other task related commands. Creates a plan.md file and tasks.json " \
+                            "to manage the workloads. For help and discussion: " \
+                            "https://discord.com/channels/1092243196446249134/1098737397094694922/threads/1102780261604790393"
 
     def post_prompt(self, prompt: PromptGenerator) -> PromptGenerator:
         """This method is called just after the generate_prompt is called,
@@ -107,7 +107,7 @@ class PlannerPlugin(AutoGPTPluginTemplate):
         return False
 
     def on_planning(
-        self, prompt: PromptGenerator, messages: List[Message]
+            self, prompt: PromptGenerator, messages: List[Message]
     ) -> Optional[str]:
         """This method is called before the planning chat completion is done.
         Args:
@@ -188,7 +188,7 @@ class PlannerPlugin(AutoGPTPluginTemplate):
         return False
 
     def pre_command(
-        self, command_name: str, arguments: Dict[str, Any]
+            self, command_name: str, arguments: Dict[str, Any]
     ) -> Tuple[str, Dict[str, Any]]:
         """This method is called before the command is executed.
         Args:
@@ -217,7 +217,7 @@ class PlannerPlugin(AutoGPTPluginTemplate):
         pass
 
     def can_handle_chat_completion(
-        self, messages: Dict[Any, Any], model: str, temperature: float, max_tokens: int
+            self, messages: Dict[Any, Any], model: str, temperature: float, max_tokens: int
     ) -> bool:
         """This method is called to check that the plugin can
           handle the chat_completion method.
@@ -231,7 +231,7 @@ class PlannerPlugin(AutoGPTPluginTemplate):
         return False
 
     def handle_chat_completion(
-        self, messages: List[Message], model: str, temperature: float, max_tokens: int
+            self, messages: List[Message], model: str, temperature: float, max_tokens: int
     ) -> str:
         """This method is called when the chat completion is done.
         Args:
