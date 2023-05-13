@@ -7,7 +7,8 @@ from typing import Any, Dict, List, Optional, Tuple, TypedDict, TypeVar
 
 from auto_gpt_plugin_template import AutoGPTPluginTemplate
 
-from .planner import check_plan, create_task, load_tasks, update_task_status, update_plan
+from .planner import Planner
+from .implementations.file_planner import FilePlanner
 
 PromptGenerator = TypeVar("PromptGenerator")
 
@@ -32,51 +33,59 @@ class PlannerPlugin(AutoGPTPluginTemplate):
                             "to manage the workloads. For help and discussion: " \
                             "https://discord.com/channels/1092243196446249134/1098737397094694922/threads/1102780261604790393"
 
-    def post_prompt(self, prompt: PromptGenerator) -> PromptGenerator:
-        """This method is called just after the generate_prompt is called,
-        but actually before the prompt is generated.
-        Args:
-            prompt (PromptGenerator): The prompt generator.
-        Returns:
-            PromptGenerator: The prompt generator.
-        """
+        # TODO: replace with factory for planner implementation, get name from AIConfig
+        self.planner = Planner(FilePlanner())
 
-        prompt.add_command(
-            "check_plan",
-            "Read the plan.md with the next goals to achieve",
-            {},
-            check_plan,
-        )
+    def post_prompt(self, prompt: PromptGenerator) -> PromptGenerator:
+        def run_planning_cycle():
+            return self.planner.run_planning_cycle()
+
+        def add_task(description: str):
+            # TODO: more params
+            return self.planner.add_task(description=description)
+
+        def complete_task(task_id: str):
+            return self.planner.complete_task(task_id=task_id)
+
+        def get_current_task():
+            return self.planner.get_current_task()
 
         prompt.add_command(
             "run_planning_cycle",
             "Improves the current plan.md and updates it with progress",
             {},
-            update_plan,
+            run_planning_cycle,
         )
 
         prompt.add_command(
             "create_task",
-            "creates a task with a task id, description and a completed status of False ",
+            "creates a task with a description",
             {
-                "task_id": "<int>",
-                "task_description": "<The task that must be performed>",
+                "description": "<The task that must be performed>",
             },
-            create_task,
-        )
-
-        prompt.add_command(
-            "load_tasks",
-            "Checks out the task ids, their descriptionsand a completed status",
-            {},
-            load_tasks,
+            add_task,
         )
 
         prompt.add_command(
             "mark_task_completed",
             "Updates the status of a task and marks it as completed",
-            {"task_id": "<int>"},
-            update_task_status,
+            {"task_id": "<the id of the task to mark completed>"},
+            complete_task,
+        )
+
+        prompt.add_command(
+            "get_current_task",
+            "Returns the task you are currently supposed to work on",
+            {},
+            get_current_task
+        )
+
+        # Todo see if there is a better way of aliasing commands, if not consider contribution
+        prompt.add_command(
+            "get_next_task",
+            "Returns the task you are supposed to work on",
+            {},
+            get_current_task
         )
 
         return prompt
