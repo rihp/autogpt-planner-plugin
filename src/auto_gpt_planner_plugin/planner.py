@@ -71,7 +71,10 @@ def generate_improved_plan(prompt: str) -> str:
             },
             {
                 "role": "user",
-                "content": f"Update the following plan given the task status below, keep the .md format:\n{prompt}\nInclude the current tasks in the improved plan, keep mind of their status and track them with a checklist:\n{tasks}\Revised version should comply with the contents of the tasks at hand:",
+                "content": f"Update the following plan given the task status below, keep the .md format:\n{prompt}\n"
+                           f"Include the current tasks in the improved plan, keep mind of their status and track them "
+                           f"with a checklist:\n{tasks}\n Revised version should comply with the contents of the "
+                           f"tasks at hand:",
             },
         ],
         max_tokens=int(max_tokens),
