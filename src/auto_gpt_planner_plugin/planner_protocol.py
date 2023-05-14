@@ -3,6 +3,11 @@ from .planner_task import PlannerTask
 
 
 class PlannerProtocol(Protocol):
+    """This class defines the protocol for the planner plugin.
+    It is used to define the methods that a storage implementation for the planner plugin needs to implement
+    in order to be used by the plugin.
+    """
+
     def run_planning_cycle(self, name: str = "PlannerGPT") -> str:
         """This method is called when the run_planning_cycle command is called.
         It is supposed to run a planning cycle for the agent identified with the name parameter.
@@ -50,7 +55,7 @@ class PlannerProtocol(Protocol):
         It is supposed to complete a task for the agent identified with the name parameter.
 
         Args:
-            task (PlannerTask): The task id to be completed.
+            task (PlannerTask): The task to be completed.
             name (str, optional): The name of the agent. Defaults to "PlannerGPT".
         """
         pass
