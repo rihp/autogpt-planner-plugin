@@ -9,6 +9,10 @@ from auto_gpt_plugin_template import AutoGPTPluginTemplate
 
 from .planner import Planner
 from .implementations.file_planner import FilePlanner
+from .implementation_factory import ImplementationFactory
+
+from autogpt.config.config import Config
+from autogpt.config.ai_config import AIConfig
 
 PromptGenerator = TypeVar("PromptGenerator")
 
@@ -33,8 +37,12 @@ class PlannerPlugin(AutoGPTPluginTemplate):
                             "to manage the workloads. For help and discussion: " \
                             "https://discord.com/channels/1092243196446249134/1098737397094694922/threads/1102780261604790393"
 
-        # TODO: replace with factory for planner implementation, get name from AIConfig
-        self.planner = Planner(FilePlanner())
+        settings = AIConfig.load(Config().ai_settings_file)
+
+        self.planner = Planner(ImplementationFactory().get_planner(
+            agent_id=settings.ai_name,
+            implementation_name="FilePlanner"
+        ))
 
     def post_prompt(self, prompt: PromptGenerator) -> PromptGenerator:
         def run_planning_cycle():

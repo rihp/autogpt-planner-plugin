@@ -5,20 +5,20 @@ from .planner_task import PlannerTask
 
 
 class Planner:
-    def __init__(self, planner: PlannerProtocol, name: str = "PlannerGPT"):
-        self.planner = planner
+    def __init__(self, implementation: PlannerProtocol, name: str = "PlannerGPT"):
+        self.implementation = implementation
         self.name = name
 
     def run_planning_cycle(self) -> str:
         """run a planning cycle"""
-        return self.planner.run_planning_cycle(name=self.name)
+        return self.implementation.run_planning_cycle(name=self.name)
 
     def get_current_task(self) -> str:
-        task = self.planner.get_current_task(name=self.name);
+        task = self.implementation.get_current_task(name=self.name);
         return f"Current task with\ntask_id: '{task.task_id}'\n is:\n{task.description}\n\n"
 
     def get_task_for_id(self, task_id: str) -> str:
-        task = self.planner.get_task_for_id(task_id=task_id, name=self.name)
+        task = self.implementation.get_task_for_id(task_id=task_id, name=self.name)
         return f"Found Task with task_id: '{task.task_id}'\ndescription:\n{task.description}\n" \
                f"completed: {task.completed}\nreoccuring: {task.reoccuring}\n" \
                f"scheduled for: {task.timestamp.isoformat()}"
@@ -36,14 +36,14 @@ class Planner:
             reoccuring=reoccuring,
             timestamp=timestamp
         )
-        task_id = self.planner.add_task(task=task, name=self.name)
+        task_id = self.implementation.add_task(task=task, name=self.name)
 
         return f"Task with task_id: '{task_id}' has been added"
 
     def complete_task(self, task_id: str) -> str:
-        self.planner.complete_task(self.planner.get_task_for_id(task_id=task_id, name=self.name))
+        self.implementation.complete_task(self.implementation.get_task_for_id(task_id=task_id, name=self.name))
         return f"The Task with task_id: '{task_id}' has been marked as completed"
 
     def optimize_schedule(self) -> str:
-        self.planner.optimize_schedule(self.name)
+        self.implementation.optimize_schedule(self.name)
         return f"Schedule has been optimized"
