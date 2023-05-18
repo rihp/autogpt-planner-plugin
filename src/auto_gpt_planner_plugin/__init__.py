@@ -9,7 +9,7 @@ from auto_gpt_plugin_template import AutoGPTPluginTemplate
 
 from .planner import Planner
 from .implementations.file_planner import FilePlanner
-from .implementation_factory import ImplementationFactory
+from .implementation_factory import get_planner
 
 from autogpt.config.config import Config
 from autogpt.config.ai_config import AIConfig
@@ -39,9 +39,9 @@ class PlannerPlugin(AutoGPTPluginTemplate):
 
         settings = AIConfig.load(Config().ai_settings_file)
 
-        self.planner = Planner(ImplementationFactory().get_planner(
+        self.planner = Planner(get_planner(
             agent_id=settings.ai_name,
-            implementation_name="FilePlanner"
+            implementation_name="SqlitePlanner"  # TODO: make this configurable
         ))
 
     def post_prompt(self, prompt: PromptGenerator) -> PromptGenerator:

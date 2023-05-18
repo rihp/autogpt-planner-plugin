@@ -1,27 +1,32 @@
 from .planner_protocol import PlannerProtocol
-
+from autogpt.config import Config
 from .implementations.file_planner import FilePlanner
+from .implementations.sqlite_planner import SqlitePlanner
+
+import re
 
 
-class ImplementationFactory:
-    """this class is supposed to be used to get the planner implementation to be used by the plugin"""
+def slugify(s):
+    s = s.lower().strip()
+    s = re.sub(r'[^\w\s-]', '', s)
+    s = re.sub(r'[\s_-]+', '-', s)
+    s = re.sub(r'^-+|-+$', '', s)
+    return s
 
-    def __new__(cls):
-        if not hasattr(cls, 'instance'):
-            cls.instance = super(ImplementationFactory, cls).__new__(cls)
-        return cls.instance
 
-    def get_planner(self, implementation_name: str, agent_id: str) -> PlannerProtocol:
-        """returns the planner implementation to be used by the plugin
+def get_planner(implementation_name: str, agent_id: str) -> PlannerProtocol:
+    CFG = Config()
+    """returns the planner implementation to be used by the plugin
 
-        Args:
+    Args:
+        implementation_name (str): the name of the planner implementation to be used
+        agent_id (str): the id of the agent that is using the planner (for example the name of the AI,
+        this can be used to namespace planner data for different agents within the storage implementation)
+    """
+    if implementation_name == "FilePlanner":
+        return FilePlanner()
+    if implementation_name == "SqlitePlanner":
+        return SqlitePlanner(db_path=f"{CFG.workspace_path}/planner_{slugify(agent_id)}.db")
 
-            implementation_name (str): the name of the planner implementation to be used
-            param agent_id (str): the id of the agent that is using the planner (for example the name of the AI,
-            this can be used to namespace planner data for different agents within the storage implementation)
-        """
-        if implementation_name == "FilePlanner":
-            return FilePlanner()
-        else:
-            raise Exception(f"Planner with name {implementation_name} is not supported")
-
+    else:
+        raise Exception(f"Planner with name {implementation_name} is not supported")

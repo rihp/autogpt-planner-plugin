@@ -15,3 +15,5 @@ class PlannerTask:
         self.reoccuring = reoccuring
         if timestamp is None:
             self.timestamp = date.today()
+        else:
+            self.timestamp = timestamp
