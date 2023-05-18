@@ -1,5 +1,6 @@
 import json
 import os
+from pathlib import Path
 
 
 def check_plan():
@@ -30,51 +31,60 @@ def check_plan():
         return file.read()
 
 
-def update_plan():
+def update_plan(goals_str: str):
     """this function checks if the file plan.md exists, if it doesn't exist it gets created"""
-
+    print(f"Planner: History - {goals_str}")
     current_working_directory = os.getcwd()
-    workdir = os.path.join(current_working_directory, 'autogpt', 'auto_gpt_workspace', 'plan.md')
+    workdir = os.path.join(
+        current_working_directory, "autogpt", "auto_gpt_workspace", "plan.md"
+    )
+    workdir = Path(workdir)
+    workdir.parent.mkdir(parents=True, exist_ok=True)
+    workdir.touch(exist_ok=True)
+    file_name = str(workdir)
 
-    file_name = workdir
-
-    with open(file_name, 'r') as file:
+    with open(file_name, "r") as file:
         data = file.read()
 
-    response = generate_improved_plan(data)
-
+    response = generate_improved_plan(data, goals_str)
+    print(f"Planner: Response - {response}")
     with open(file_name, "w") as file:
         file.write(response)
-    print(f"{file_name} updated.")
+    print(f"Planner: {file_name} updated.")
 
     return response
 
 
-def generate_improved_plan(prompt: str) -> str:
+def generate_improved_plan(current_plan: str, goals_str: str) -> str:
     """Generate an improved plan using OpenAI's ChatCompletion functionality"""
 
     import openai
 
     tasks = load_tasks()
 
-    model = os.getenv('PLANNER_MODEL', os.getenv('FAST_LLM_MODEL', 'gpt-3.5-turbo'))
-    max_tokens = os.getenv('PLANNER_TOKEN_LIMIT', os.getenv('FAST_TOKEN_LIMIT', 1500))
-    temperature = os.getenv('PLANNER_TEMPERATURE', os.getenv('TEMPERATURE', 0.5))
+    model = os.getenv("PLANNER_MODEL", os.getenv("FAST_LLM_MODEL", "gpt-3.5-turbo"))
+    max_tokens = os.getenv("PLANNER_TOKEN_LIMIT", os.getenv("FAST_TOKEN_LIMIT", 1500))
+    temperature = os.getenv("PLANNER_TEMPERATURE", os.getenv("TEMPERATURE", 0.5))
+
+    # TODO: Get summary/context from main LLM??
 
     # Call the OpenAI API for chat completion
     response = openai.ChatCompletion.create(
+        # Testing
+        # Testing 2
         model=model,
         messages=[
             {
                 "role": "system",
-                "content": "You are an assistant that improves and adds crucial points to plans in .md format.",
+                "content": f"You are an assistant that improves and adds crucial points to plans in .md format.",
             },
             {
                 "role": "user",
-                "content": f"Update the following plan given the task status below, keep the .md format:\n{prompt}\n"
-                           f"Include the current tasks in the improved plan, keep mind of their status and track them "
-                           f"with a checklist:\n{tasks}\n Revised version should comply with the contents of the "
-                           f"tasks at hand:",
+                "content": f"Update the following plan given the goals and task status below, keep the .md format\n{current_plan}\n"
+                f"\nProject goals:{goals_str}\n"
+                f"\nInclude the current tasks in the improved plan, keep mind of their status and track them "
+                f"with a checklist:\n{tasks}\n Revised version should comply with the contents of the "
+                f"tasks at hand:",
             },
         ],
         max_tokens=int(max_tokens),

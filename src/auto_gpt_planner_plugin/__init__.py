@@ -7,8 +7,6 @@ from typing import Any, Dict, List, Optional, Tuple, TypedDict, TypeVar
 
 from auto_gpt_plugin_template import AutoGPTPluginTemplate
 
-from .planner import check_plan, create_task, load_tasks, update_task_status, update_plan
-
 PromptGenerator = TypeVar("PromptGenerator")
 
 
@@ -19,7 +17,7 @@ class Message(TypedDict):
 
 class PlannerPlugin(AutoGPTPluginTemplate):
     """
-    This is a task planner system plugin for Auto-GPT which 
+    This is a task planner system plugin for Auto-GPT which
     adds the task planning commands to the prompt.
     """
 
@@ -27,10 +25,12 @@ class PlannerPlugin(AutoGPTPluginTemplate):
         super().__init__()
         self._name = "AutoGPT-Planner-Plugin"
         self._version = "0.1.1"
-        self._description = "This is a simple task planner module for Auto-GPT. It adds the run_planning_cycle " \
-                            "command along with other task related commands. Creates a plan.md file and tasks.json " \
-                            "to manage the workloads. For help and discussion: " \
-                            "https://discord.com/channels/1092243196446249134/1098737397094694922/threads/1102780261604790393"
+        self._description = (
+            "This is a simple task planner module for Auto-GPT. It adds the run_planning_cycle "
+            "command along with other task related commands. Creates a plan.md file and tasks.json "
+            "to manage the workloads. For help and discussion: "
+            "https://discord.com/channels/1092243196446249134/1098737397094694922/threads/1102780261604790393"
+        )
 
     def post_prompt(self, prompt: PromptGenerator) -> PromptGenerator:
         """This method is called just after the generate_prompt is called,
@@ -40,6 +40,14 @@ class PlannerPlugin(AutoGPTPluginTemplate):
         Returns:
             PromptGenerator: The prompt generator.
         """
+
+        from .planner import (
+            check_plan,
+            create_task,
+            load_tasks,
+            update_task_status,
+            update_plan,
+        )
 
         prompt.add_command(
             "check_plan",
@@ -51,7 +59,7 @@ class PlannerPlugin(AutoGPTPluginTemplate):
         prompt.add_command(
             "run_planning_cycle",
             "Improves the current plan.md and updates it with progress",
-            {},
+            {"goals": "<goals to achieve>"},
             update_plan,
         )
 
@@ -79,6 +87,10 @@ class PlannerPlugin(AutoGPTPluginTemplate):
             update_task_status,
         )
 
+        plan = check_plan()
+        if plan:
+            prompt.add_constraint(f"Stick to this plan: {plan}")
+
         return prompt
 
     def can_handle_post_prompt(self) -> bool:
@@ -104,17 +116,21 @@ class PlannerPlugin(AutoGPTPluginTemplate):
         handle the on_planning method.
         Returns:
             bool: True if the plugin can handle the on_planning method."""
-        return False
+        return True
 
     def on_planning(
-            self, prompt: PromptGenerator, messages: List[Message]
+        self, prompt: PromptGenerator, messages: List[Message]
     ) -> Optional[str]:
         """This method is called before the planning chat completion is done.
         Args:
             prompt (PromptGenerator): The prompt generator.
             messages (List[str]): The list of messages.
         """
-        pass
+        from .planner import update_plan
+
+        print("Planner: initiating planning cycle...")
+        print(f"Planner: Prompt: {prompt.generate_prompt_string()}")
+        return update_plan(",".join(prompt.goals))
 
     def can_handle_post_planning(self) -> bool:
         """This method is called to check that the plugin can
@@ -188,7 +204,7 @@ class PlannerPlugin(AutoGPTPluginTemplate):
         return False
 
     def pre_command(
-            self, command_name: str, arguments: Dict[str, Any]
+        self, command_name: str, arguments: Dict[str, Any]
     ) -> Tuple[str, Dict[str, Any]]:
         """This method is called before the command is executed.
         Args:
@@ -217,7 +233,7 @@ class PlannerPlugin(AutoGPTPluginTemplate):
         pass
 
     def can_handle_chat_completion(
-            self, messages: Dict[Any, Any], model: str, temperature: float, max_tokens: int
+        self, messages: Dict[Any, Any], model: str, temperature: float, max_tokens: int
     ) -> bool:
         """This method is called to check that the plugin can
           handle the chat_completion method.
@@ -231,7 +247,7 @@ class PlannerPlugin(AutoGPTPluginTemplate):
         return False
 
     def handle_chat_completion(
-            self, messages: List[Message], model: str, temperature: float, max_tokens: int
+        self, messages: List[Message], model: str, temperature: float, max_tokens: int
     ) -> str:
         """This method is called when the chat completion is done.
         Args:
