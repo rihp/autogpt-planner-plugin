@@ -1,147 +1,49 @@
-import json
-import os
+import datetime
+
+from .planner_protocol import PlannerProtocol
+from .planner_task import PlannerTask
 
 
-def check_plan():
-    """this function checks if the file plan.md exists, if it doesn't exist it gets created"""
+class Planner:
+    def __init__(self, implementation: PlannerProtocol, name: str = "PlannerGPT"):
+        self.implementation = implementation
+        self.name = name
 
-    current_working_directory = os.getcwd()
-    workdir = os.path.join(
-        current_working_directory, "autogpt", "auto_gpt_workspace", "plan.md"
-    )
+    def run_planning_cycle(self) -> str:
+        """run a planning cycle"""
+        return self.implementation.run_planning_cycle(name=self.name)
 
-    file_name = workdir
+    def get_current_task(self) -> str:
+        task = self.implementation.get_current_task(name=self.name);
+        return f"Current task with\ntask_id: '{task.task_id}'\n is:\n{task.description}\n\n"
 
-    if not os.path.exists(file_name):
-        with open(file_name, "w") as file:
-            file.write(
-                """
-                # Task List and status:
-                - [ ] Create a detailed checklist for the current plan and goals
-                - [ ] Finally, review that every new task is completed
-                
-                ## Notes:
-                - Use the run_planning_cycle command frequently to keep this plan up to date.
-                        """
-            )
-        print(f"{file_name} created.")
+    def get_task_for_id(self, task_id: str) -> str:
+        task = self.implementation.get_task_for_id(task_id=task_id, name=self.name)
+        return f"Found Task with task_id: '{task.task_id}'\ndescription:\n{task.description}\n" \
+               f"completed: {task.completed}\nreoccuring: {task.reoccuring}\n" \
+               f"scheduled for: {task.timestamp.isoformat()}"
 
-    with open(file_name, "r") as file:
-        return file.read()
+    def add_task(self, description: str, reoccuring: bool = False, timestamp=None) -> str:
+        if timestamp is None:
+            timestamp = datetime.datetime.now()
+        else:
+            timestamp = datetime.datetime.fromisoformat(timestamp)
 
+        task = PlannerTask(
+            description=description,
+            task_id=None,
+            completed=False,
+            reoccuring=reoccuring,
+            timestamp=timestamp
+        )
+        task_id = self.implementation.add_task(task=task, name=self.name)
 
-def update_plan():
-    """this function checks if the file plan.md exists, if it doesn't exist it gets created"""
+        return f"Task with task_id: '{task_id}' has been added"
 
-    current_working_directory = os.getcwd()
-    workdir = os.path.join(current_working_directory, 'autogpt', 'auto_gpt_workspace', 'plan.md')
+    def complete_task(self, task_id: str) -> str:
+        self.implementation.complete_task(self.implementation.get_task_for_id(task_id=task_id, name=self.name))
+        return f"The Task with task_id: '{task_id}' has been marked as completed"
 
-    file_name = workdir
-
-    with open(file_name, 'r') as file:
-        data = file.read()
-
-    response = generate_improved_plan(data)
-
-    with open(file_name, "w") as file:
-        file.write(response)
-    print(f"{file_name} updated.")
-
-    return response
-
-
-def generate_improved_plan(prompt: str) -> str:
-    """Generate an improved plan using OpenAI's ChatCompletion functionality"""
-
-    import openai
-
-    tasks = load_tasks()
-
-    model = os.getenv('PLANNER_MODEL', os.getenv('FAST_LLM_MODEL', 'gpt-3.5-turbo'))
-    max_tokens = os.getenv('PLANNER_TOKEN_LIMIT', os.getenv('FAST_TOKEN_LIMIT', 1500))
-    temperature = os.getenv('PLANNER_TEMPERATURE', os.getenv('TEMPERATURE', 0.5))
-
-    # Call the OpenAI API for chat completion
-    response = openai.ChatCompletion.create(
-        model=model,
-        messages=[
-            {
-                "role": "system",
-                "content": "You are an assistant that improves and adds crucial points to plans in .md format.",
-            },
-            {
-                "role": "user",
-                "content": f"Update the following plan given the task status below, keep the .md format:\n{prompt}\n"
-                           f"Include the current tasks in the improved plan, keep mind of their status and track them "
-                           f"with a checklist:\n{tasks}\n Revised version should comply with the contents of the "
-                           f"tasks at hand:",
-            },
-        ],
-        max_tokens=int(max_tokens),
-        n=1,
-        temperature=float(temperature),
-    )
-
-    # Extract the improved plan from the response
-    improved_plan = response.choices[0].message.content.strip()
-    return improved_plan
-
-
-def create_task(task_id=None, task_description: str = None, status=False):
-    task = {"description": task_description, "completed": status}
-    tasks = load_tasks()
-    tasks[str(task_id)] = task
-
-    current_working_directory = os.getcwd()
-    workdir = os.path.join(
-        current_working_directory, "autogpt", "auto_gpt_workspace", "tasks.json"
-    )
-    file_name = workdir
-
-    with open(file_name, "w") as f:
-        json.dump(tasks, f)
-
-    return tasks
-
-
-def load_tasks() -> dict:
-    current_working_directory = os.getcwd()
-    workdir = os.path.join(
-        current_working_directory, "autogpt", "auto_gpt_workspace", "tasks.json"
-    )
-    file_name = workdir
-
-    if not os.path.exists(file_name):
-        with open(file_name, "w") as f:
-            f.write("{}")
-
-    with open(file_name) as f:
-        try:
-            tasks = json.load(f)
-            if isinstance(tasks, list):
-                tasks = {}
-        except json.JSONDecodeError:
-            tasks = {}
-
-    return tasks
-
-
-def update_task_status(task_id):
-    tasks = load_tasks()
-
-    if str(task_id) not in tasks:
-        print(f"Task with ID {task_id} not found.")
-        return
-
-    tasks[str(task_id)]["completed"] = True
-
-    current_working_directory = os.getcwd()
-    workdir = os.path.join(
-        current_working_directory, "autogpt", "auto_gpt_workspace", "tasks.json"
-    )
-    file_name = workdir
-
-    with open(file_name, "w") as f:
-        json.dump(tasks, f)
-
-    return f"Task with ID {task_id} has been marked as completed."
+    def optimize_schedule(self) -> str:
+        self.implementation.optimize_schedule(self.name)
+        return f"Schedule has been optimized"
