@@ -4,13 +4,12 @@ and check it again to keep on track.
 built by @rihp on github"""
 
 from typing import Any, Dict, List, Optional, Tuple, TypedDict, TypeVar
-
 from auto_gpt_plugin_template import AutoGPTPluginTemplate
-
-from .planner import check_plan, create_task, load_tasks, update_task_status, update_plan
+from .planner import Planner
 
 PromptGenerator = TypeVar("PromptGenerator")
 
+planner = Planner()
 
 class Message(TypedDict):
     role: str
@@ -31,6 +30,7 @@ class PlannerPlugin(AutoGPTPluginTemplate):
                             "command along with other task related commands. Creates a plan.md file and tasks.json " \
                             "to manage the workloads. For help and discussion: " \
                             "https://discord.com/channels/1092243196446249134/1098737397094694922/threads/1102780261604790393"
+        self.planner = Planner()  # Assuming you have a Planner instance here
 
     def post_prompt(self, prompt: PromptGenerator) -> PromptGenerator:
         """This method is called just after the generate_prompt is called,
@@ -45,14 +45,14 @@ class PlannerPlugin(AutoGPTPluginTemplate):
             "check_plan",
             "Read the plan.md with the next goals to achieve",
             {},
-            check_plan,
+            self.planner.check_plan,
         )
 
         prompt.add_command(
             "run_planning_cycle",
             "Improves the current plan.md and updates it with progress",
             {},
-            update_plan,
+            self.planner.update_plan,
         )
 
         prompt.add_command(
@@ -62,21 +62,21 @@ class PlannerPlugin(AutoGPTPluginTemplate):
                 "task_id": "<int>",
                 "task_description": "<The task that must be performed>",
             },
-            create_task,
+            self.planner.task_manager.add_task,  # Change this line
         )
 
         prompt.add_command(
             "load_tasks",
             "Checks out the task ids, their descriptionsand a completed status",
             {},
-            load_tasks,
+            self.planner.task_manager.load_tasks,
         )
 
         prompt.add_command(
             "mark_task_completed",
             "Updates the status of a task and marks it as completed",
             {"task_id": "<int>"},
-            update_task_status,
+            self.planner.task_manager.update_task_status,
         )
 
         return prompt
