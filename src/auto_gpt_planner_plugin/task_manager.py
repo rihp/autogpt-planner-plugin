@@ -5,33 +5,38 @@ from datetime import datetime
 class TaskManager:
     """This class manages tasks."""
 
-    def __init__(self, tasks_file=None):
-        current_working_directory = os.getcwd()
-        default_tasks_file = os.path.join(current_working_directory, "autogpt", "auto_gpt_workspace", "tasks.json")
-        self.tasks_file = tasks_file if tasks_file else default_tasks_file
+    def __init__(self, tasks_file="tasks.json"):
+        self.tasks_file = tasks_file
         self.tasks = []
+        self.task_counter = 0
 
-        if os.path.exists(self.tasks_file):
-            with open(self.tasks_file, "r") as f:
+        # Load tasks from the tasks file
+        self.load_tasks()
+
+    def get_task_file_path(self):
+        """Get the path of the tasks.json file."""
+        current_working_directory = os.getcwd()
+        return os.path.join(current_working_directory, "autogpt", "auto_gpt_workspace", "tasks.json")
+
+    def load_tasks(self):
+        """Loads tasks from the tasks file."""
+        file_name = self.get_task_file_path()
+
+        if os.path.exists(file_name):
+            with open(file_name, "r") as f:
                 self.tasks = json.load(f)
 
-    def validate_task(self, task):
-        if not task.get('task_id'):
-            raise ValueError('Task ID cannot be empty')
-        if not task.get('task_description'):
-            raise ValueError('Task description cannot be empty')
-        if any(t['task_id'] == task['task_id'] for t in self.tasks):
-            raise ValueError('Task ID already in use')
-        if task.get('deadline'):
-            try:
-                datetime.strptime(task.get('deadline'), '%Y-%m-%d')
-            except ValueError:
-                raise ValueError('Deadline must be a valid date in YYYY-MM-DD format')
+    def save_tasks(self):
+        """Saves tasks to the tasks file."""
+        file_name = self.get_task_file_path()
 
-    def add_task(self, task_id, task_description, deadline=None, priority=None, assignee=None):
+        with open(file_name, "w") as f:
+            json.dump(self.tasks, f, indent=4)
+
+    def add_task(self, task_description, deadline=None, priority=None, assignee=None):
         """Adds a task to the task manager."""
         task = {
-            "task_id": task_id,
+            "task_id": self.task_counter,  # Modify this line
             "task_description": task_description,
             "completed": False,
             "deadline": deadline,
@@ -41,57 +46,22 @@ class TaskManager:
         }
         self.validate_task(task)
         self.tasks.append(task)
-        self.save_tasks()
-        if self.planner:
-            self.planner.update_plan()
-
-
-    def load_tasks(self):
-        """Loads tasks from the tasks file."""
-        try:
-            if os.path.exists(self.tasks_file):
-                with open(self.tasks_file, "r") as f:
-                    self.tasks = json.load(f)
-        except Exception as e:
-            print(f"Error loading tasks: {e}")
-
-    def save_tasks(self):
-        """Saves tasks to the tasks file."""
-        try:
-            with open(self.tasks_file, "w") as f:
-                json.dump(self.tasks, f, indent=4)
-        except Exception as e:
-            print(f"Error saving tasks: {e}")
-
-    def get_tasks(self, completed=None):
-        """Gets all tasks from the task manager."""
-        if completed is None:
-            return self.tasks
-        return [t for t in self.tasks if t['completed'] == completed]
-
-    def get_task(self, task_id):
-        """Gets a task from the task manager by task id."""
-        for task in self.tasks:
-            if task["task_id"] == task_id:
-                return task
+        self.save_tasks()  # Save tasks after adding a new one
+        self.task_counter += 1
 
     def update_task_status(self, task_id, **kwargs):
         """Updates the status of a task in the task manager."""
         for task in self.tasks:
             if task["task_id"] == task_id:
                 task.update(kwargs)
-        self.save_tasks()
-        if self.planner:
-            self.planner.update_plan()
+        self.save_tasks()  # Save tasks after updating a task's status
 
     def delete_task(self, task_id):
         """Deletes a task from the task manager."""
         for task in self.tasks:
             if task["task_id"] == task_id:
                 self.tasks.remove(task)
-        self.save_tasks()
-        if self.planner:
-            self.planner.update_plan()
+        self.save_tasks()  # Save tasks after deleting a task
 
     def generate_report(self):
         """Generates a report of the tasks."""

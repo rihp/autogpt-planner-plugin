@@ -1,0 +1,42 @@
+{
+    "create_task": {
+        "description": "Creates a new task",
+        "function": "create_task",
+        "args": ["task_id", "task_description", "status"]
+    },
+    "update_task_status": {
+        "description": "Updates the status of a task",
+        "function": "update_task_status",
+        "args": ["task_id", "status"]
+    },
+    "delete_task": {
+        "description": "Deletes a task",
+        "function": "delete_task",
+        "args": ["task_id"]
+    },
+    "load_tasks": {
+        "description": "Loads tasks from the task file",
+        "function": "load_tasks",
+        "args": []
+    },
+    "save_tasks": {
+        "description": "Saves tasks to the task file",
+        "function": "save_tasks",
+        "args": []
+    },
+    "get_tasks": {
+        "description": "Gets all tasks",
+        "function": "get_tasks",
+        "args": []
+    },
+    "get_task": {
+        "description": "Gets a specific task",
+        "function": "get_task",
+        "args": ["task_id"]
+    },
+    "generate_report": {
+        "description": "Generates a report of all tasks",
+        "function": "generate_report",
+        "args": []
+    }
+}

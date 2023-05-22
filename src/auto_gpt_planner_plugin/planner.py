@@ -7,8 +7,10 @@ class Planner:
     """This class handles the planning functionality."""
 
     def __init__(self):
+        # Set the model and maximum tokens for the OpenAI API
         self.MODEL = self.get_env_var('PLANNER_MODEL', self.get_env_var('FAST_LLM_MODEL', 'gpt-3.5-turbo'))
         self.MAX_TOKENS = int(self.get_env_var('PLANNER_TOKEN_LIMIT', '4096'))
+        # Initialize the task manager
         self.task_manager = TaskManager()
 
     def get_env_var(self, var_name, default_value):
@@ -96,8 +98,7 @@ class Planner:
                 model=self.MODEL,
                 messages=[
                     {
-                        "role": "system",
-                        "content": "You are an assistant that improves and adds crucial points to plans in .md format.",
+                        "role": "system","content": "You are an assistant that improves and adds crucial points to plans in .md format.",
                     },
                     {
                         "role": "user",
