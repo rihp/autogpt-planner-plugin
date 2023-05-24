@@ -42,7 +42,8 @@ class TaskManager:
             "deadline": deadline if deadline is not None else "No deadline",
             "priority": priority if priority is not None else "No priority",
             "assignee": assignee if assignee is not None else "No assignee",
-            "progress": 0
+            "progress": 0,
+            "tree_of_thoughts": {}  # New attribute for Tree of Thoughts
         }
         self.validate_task(task)
         self.tasks.append(task)
@@ -90,34 +91,34 @@ class TaskManager:
 
         return report
 
-def validate_task(self, task):
-    """Validates a task before adding it to the task manager."""
-    required_fields = ["task_id", "task_description", "completed", "progress"]
+    def validate_task(self, task):
+        """Validates a task before adding it to the task manager."""
+        required_fields = ["task_id", "task_description", "completed", "progress"]
 
-    for field in required_fields:
-        if field not in task:
-            raise ValueError(f"Task is missing {field}")
+        for field in required_fields:
+            if field not in task:
+                raise ValueError(f"Task is missing {field}")
 
-    if not isinstance(task["task_id"], int):
-        raise ValueError("Task ID must be an integer")
+        if not isinstance(task["task_id"], int):
+            raise ValueError("Task ID must be an integer")
 
-    if not isinstance(task["task_description"], str):
-        raise ValueError("Task description must be a string")
+        if not isinstance(task["task_description"], str):
+            raise ValueError("Task description must be a string")
 
-    if not isinstance(task["completed"], bool):
-        raise ValueError("Task completion status must be a boolean")
+        if not isinstance(task["completed"], bool):
+            raise ValueError("Task completion status must be a boolean")
 
-    if not isinstance(task["progress"], int) or not (0 <= task["progress"] <= 100):
-        raise ValueError("Task progress must be an integer between 0 and 100")
+        if not isinstance(task["progress"], int) or not (0 <= task["progress"] <= 100):
+            raise ValueError("Task progress must be an integer between 0 and 100")
 
-    if task["deadline"] is not None:
-        try:
-            datetime.strptime(task["deadline"], "%Y-%m-%d")
-        except ValueError:
-            raise ValueError("Task deadline must be a string in the format 'YYYY-MM-DD'")
+        if task["deadline"] is not None:
+            try:
+                datetime.strptime(task["deadline"], "%Y-%m-%d")
+            except ValueError:
+                raise ValueError("Task deadline must be a string in the format 'YYYY-MM-DD'")
 
-    if task["priority"] is not None and task["priority"] not in ["high", "medium", "low", None]:
-        raise ValueError("Task priority must be 'high', 'medium', 'low', or None")
+        if task["priority"] is not None and task["priority"] not in ["high", "medium", "low", None]:
+            raise ValueError("Task priority must be 'high', 'medium', 'low', or None")
 
-    if task["assignee"] is not None and not isinstance(task["assignee"], str):
-        raise ValueError("Task assignee must be a string")
+        if task["assignee"] is not None and not isinstance(task["assignee"], str):
+            raise ValueError("Task assignee must be a string")

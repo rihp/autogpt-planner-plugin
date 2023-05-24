@@ -2,6 +2,7 @@ import os
 import openai
 from .task_manager import TaskManager
 from .utils import process_response
+from .tree_of_thoughts import TreeOfThoughts
 
 class Planner:
     """This class handles the planning functionality."""
@@ -59,6 +60,7 @@ class Planner:
     def update_plan(self):
         """
         Update the existing plan based on task status and generate an improved plan.
+        Incorporate the best solution from the Tree of Thoughts of each task into the plan.
         """
         file_name = self.get_plan_file_path()
 
@@ -73,12 +75,20 @@ class Planner:
         # Generate an improved plan
         response = self.generate_improved_plan(data)
 
+        # Incorporate the best solution from the Tree of Thoughts of each task into the plan
+        tasks = self.task_manager.get_tasks()
+        for task in tasks:
+            problem = task["task_description"]
+            tree_of_thoughts = self.generate_tree_of_thoughts(problem)
+            best_solution = self.evaluate_tree_of_thoughts(tree_of_thoughts)
+            response += f"\nBest solution for task '{task['task_id']}': {best_solution}"
+
         # Write the improved plan to the plan.md file
         try:
             with open(file_name, "w") as file:
                 file.write(response)
             print(f"{file_name} updated.")
-        except Exception as e:
+        except Exception as        e:
             print(f"Failed to update {file_name}: {e}")
             return None
 
@@ -124,3 +134,18 @@ class Planner:
             return None
 
         return processed_response
+    
+    def generate_tree_of_thoughts(self, problem):
+        """
+        Generate a Tree of Thoughts for a given problem using the GPT-4 model.
+        """
+        tree_of_thoughts = TreeOfThoughts(problem, self.MODEL, self.MAX_TOKENS)
+        return tree_of_thoughts.generate()
+
+    def evaluate_tree_of_thoughts(self, tree_of_thoughts):
+        """
+        Evaluate a Tree of Thoughts using the GPT-4 model and select the best solution.
+        """
+        best_solution = tree_of_thoughts.evaluate()
+        return best_solution
+

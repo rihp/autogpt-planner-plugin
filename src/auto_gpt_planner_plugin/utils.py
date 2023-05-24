@@ -1,5 +1,4 @@
 import tokenizers
-import re
 
 # Global constants
 tokenizer = tokenizers.ByteLevelBPETokenizer()
@@ -14,7 +13,7 @@ def process_response(response):
         list: A list of response chunks.
     """
     MAX_TOKENS = 4096
-    CONTEXT_MARKER = "<|context|>"
+    CONTEXT_MARKER = ""
     tokens = tokenizer.encode(response)
     
     if len(tokens) > MAX_TOKENS:

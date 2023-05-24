@@ -2,10 +2,11 @@ import json
 from task_manager import TaskManager
 
 class CommandHandler:
-    def __init__(self, commands_file):
-        with open(commands_file, 'r') as f:
-            self.commands = json.load(f)
-        self.task_manager = TaskManager()
+    """This class handles the command functionality."""
+
+    def __init__(self, planner):
+        # Initialize the planner
+        self.planner = planner
 
     def execute_command(self, command_name, args):
         if command_name not in self.commands:
@@ -28,3 +29,30 @@ class CommandHandler:
         result = function(**args)
 
         return result
+
+    def handle_generate_tree_of_thoughts_command(self, task_id):
+        """
+        Handle the command to generate a Tree of Thoughts for a task.
+        """
+        task = self.planner.task_manager.get_task(task_id)
+        if task is None:
+            print(f"No task found with ID {task_id}")
+            return
+
+        problem = task["task_description"]
+        tree_of_thoughts = self.planner.generate_tree_of_thoughts(problem)
+        print(f"Generated Tree of Thoughts for task {task_id}: {tree_of_thoughts}")
+
+    def handle_evaluate_tree_of_thoughts_command(self, task_id):
+        """
+        Handle the command to evaluate a Tree of Thoughts for a task.
+        """
+        task = self.planner.task_manager.get_task(task_id)
+        if task is None:
+            print(f"No task found with ID {task_id}")
+            return
+
+        problem = task["task_description"]
+        tree_of_thoughts = self.planner.generate_tree_of_thoughts(problem)
+        best_solution = self.planner.evaluate_tree_of_thoughts(tree_of_thoughts)
+        print(f"Best solution for task {task_id}: {best_solution}")
