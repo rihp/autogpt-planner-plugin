@@ -1,7 +1,7 @@
 import os
 import openai
 from .task_manager import TaskManager
-from .utils import process_response
+from .utils import process_response, process_input_messages
 from .tree_of_thoughts import TreeOfThoughts
 
 class Planner:
@@ -88,7 +88,7 @@ class Planner:
             with open(file_name, "w") as file:
                 file.write(response)
             print(f"{file_name} updated.")
-        except Exception as        e:
+        except Exception as e:
             print(f"Failed to update {file_name}: {e}")
             return None
 
@@ -102,22 +102,14 @@ class Planner:
          # Load the current tasks
         tasks = self.task_manager.get_tasks()
 
+        # Prepare the input messages
+        input_messages = process_input_messages(prompt, tasks, self.MAX_TOKENS)
+
         # Call the OpenAI API for chat completion
         try:
             response = openai.ChatCompletion.create(
                 model=self.MODEL,
-                messages=[
-                    {
-                        "role": "system","content": "You are an assistant that improves and adds crucial points to plans in .md format.",
-                    },
-                    {
-                        "role": "user",
-                        "content": f"Update the following plan given the task status below, keep the .md format:\n{prompt}\n"
-                                   f"Include the current tasks in the improved plan, keep mind of their status and track them "
-                                   f"with a checklist:\n{tasks}\n Revised version should comply with the contents of the "
-                                   f"tasks at hand:",
-                    },
-                ],
+                messages=input_messages,
                 max_tokens=self.MAX_TOKENS,
                 n=1,
                 temperature=0.5,
@@ -148,4 +140,3 @@ class Planner:
         """
         best_solution = tree_of_thoughts.evaluate()
         return best_solution
-
