@@ -9,5 +9,8 @@ build
 twine
 auto_gpt_plugin_template
 openai
-tokenize
 tokenizers
+numpy
+task
+backoff
+python-dotenv

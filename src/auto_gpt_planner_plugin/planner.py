@@ -1,8 +1,11 @@
 import os
-import openai
+import argparse
+import numpy as np
 from .task_manager import TaskManager
-from .utils import process_response, process_input_messages
-from .tree_of_thoughts import TreeOfThoughts
+from .utils import gpt, gpt_usage
+from .tasks import get_task
+import itertools
+
 
 class Planner:
     """This class handles the planning functionality."""
@@ -25,7 +28,7 @@ class Planner:
 
     def check_plan(self):
         """
-        Check if the plan.md file exists in the specified directory, 
+        Check if the plan.md file exists in the specified directory,
         if it doesn't exist, a new one is created with a default content.
         """
         file_name = self.get_plan_file_path()
@@ -39,10 +42,10 @@ class Planner:
                         # Task List and status:
                         - [ ] Create a detailed checklist for the current plan and goals
                         - [ ] Finally, review that every new task is completed
-                        
+
                         ## Notes:
                         - Use the run_planning_cycle command frequently to keep this plan up to date.
-                                """
+                        """
                     )
                 print(f"{file_name} created.")
             except Exception as e:
@@ -94,49 +97,91 @@ class Planner:
 
         return response
 
-    def generate_improved_plan(self, prompt: str) -> str:
+    def solve_task(self, task_id, task_file_path, i):
         """
-        Generate an improved plan using OpenAI's ChatCompletion functionality.
-        This function takes the existing plan and tasks as inputs and returns an improved plan.
+        Solve a task using the solve function from the first script.
+        This function takes a task ID and a task file path as inputs.
         """
-         # Load the current tasks
-        tasks = self.task_manager.get_tasks()
+        # Parse the arguments for the solve function
+        args = self.parse_args()
+        args.task = task_id
+        args.task_file_path = task_file_path
 
-        # Prepare the input messages
-        input_messages = process_input_messages(prompt, tasks, self.MAX_TOKENS)
+        # Get the task
+        task = get_task(args.task, args.task_file_path)
 
-        # Call the OpenAI API for chat completion
-        try:
-            response = openai.ChatCompletion.create(
-                model=self.MODEL,
-                messages=input_messages,
-                max_tokens=self.MAX_TOKENS,
-                n=1,
-                temperature=0.5,
-            )
-        except Exception as e:
-            print(f"Failed to generate improved plan: {e}")
-            return None
+        # Use the solve function to solve the task
+        ys, info = self.solve(args, task, i)
 
-        # Process the OpenAI response
-        try:
-            processed_response = process_response(response)
-        except Exception as e:
-            print(f"Failed to process response: {e}")
-            return None
+        # Update the plan with the solution
+        self.update_plan(ys)
 
-        return processed_response
-    
-    def generate_tree_of_thoughts(self, problem):
-        """
-        Generate a Tree of Thoughts for a given problem using the GPT-4 model.
-        """
-        tree_of_thoughts = TreeOfThoughts(problem, self.MODEL, self.MAX_TOKENS)
-        return tree_of_thoughts.generate()
+        return ys, info
 
-    def evaluate_tree_of_thoughts(self, tree_of_thoughts):
-        """
-        Evaluate a Tree of Thoughts using the GPT-4 model and select the best solution.
-        """
-        best_solution = tree_of_thoughts.evaluate()
-        return best_solution
+    def solve(self, args, task, idx, to_print=True):
+        print(gpt)
+        x = task.get_input(idx)  # input
+        ys = ['']  # current output candidates
+        infos = []
+        for step in range(task.steps):
+            # generation
+            if args.method_generate == 'sample':
+                new_ys = [self.get_samples(task, x, y, args.n_generate_sample, prompt_sample=args.prompt_sample, stop=task.stops[step]) for y in ys]
+            elif args.method_generate == 'propose':
+                new_ys = [self.get_proposals(task, x, y) for y in ys]
+            new_ys = list(itertools.chain(*new_ys))
+            ids = list(range(len(new_ys)))
+            # evaluation
+            if args.method_evaluate == 'vote':
+                values = self.get_votes(task, x, new_ys, args.n_evaluate_sample)
+            elif args.method_evaluate == 'value':
+                values = self.get_values(task, x, new_ys, args.n_evaluate_sample)
+
+            # selection
+            if args.method_select == 'sample':
+                ps = np.array(values) / sum(values)
+                select_ids = np.random.choice(ids, size=args.n_select_sample, p=ps).tolist()
+            elif args.method_select == 'greedy':
+                select_ids = sorted(ids, key=lambda x: values[x], reverse=True)[:args.n_select_sample]
+            select_new_ys = [new_ys[select_id] for select_id in select_ids]
+
+            # log
+            if to_print:
+                sorted_new_ys, sorted_values = zip(*sorted(zip(new_ys, values), key=lambda x: x[1], reverse=True))
+                print(f'-- new_ys --: {sorted_new_ys}\n-- sol values --: {sorted_values}\n-- choices --: {select_new_ys}\n')
+
+            infos.append({'step': step, 'x': x, 'ys': ys, 'new_ys': new_ys, 'values': values, 'select_new_ys': select_new_ys})
+            ys = select_new_ys
+
+        if to_print:
+            print(ys)
+        return ys, {'steps': infos}
+
+    def parse_args(self):
+        args = argparse.ArgumentParser()
+        args.add_argument('--backend', type=str, choices=['gpt-4', 'gpt-3.5-turbo'], default='gpt-4')
+        args.add_argument('--temperature', type=float, default=0.7)
+
+        args.add_argument('--task', type=str, required=True, choices=['game24', 'text', 'crosswords'])
+        args.add_argument('--task_file_path', type=str, required=True)
+        args.add_argument('--task_start_index', type=int, default=900)
+        args.add_argument('--task_end_index', type=int, default=1000)
+
+        args.add_argument('--naive_run', action='store_true')
+        args.add_argument('--prompt_sample', type=str, choices=['standard', 'cot'])  # only used when method_generate = sample, or naive_run
+
+        args.add_argument('--method_generate', type=str, choices=['sample', 'propose'])
+        args.add_argument('--method_evaluate', type=str, choices=['value', 'vote'])
+        args.add_argument('--method_select', type=str, choices=['sample', 'greedy'])
+        args.add_argument('--n_generate_sample', type=int, default=1)  # only thing needed if naive_run
+        args.add_argument('--n_evaluate_sample', type=int, default=1)
+        args.add_argument('--n_select_sample', type=int, default=1)
+
+        args = args.parse_args()
+        return args
+
+if __name__ == '__main__':
+    planner = Planner()
+    args = planner.parse_args()
+    print(args)
+    planner.run(args)
