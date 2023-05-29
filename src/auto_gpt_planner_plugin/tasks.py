@@ -48,10 +48,12 @@ class Task:
 
 def get_task(task_id, task_file_path):
     if not os.path.exists(task_file_path):
-        print("Error: Task file does not exist.")
-        return None
+        raise FileNotFoundError(f"Task file {task_file_path} does not exist.")
     with open(task_file_path, "r") as file:
-        tasks = json.load(file)
+        try:
+            tasks = json.load(file)
+        except json.JSONDecodeError:
+            raise ValueError(f"Invalid JSON in {task_file_path}.")
         for task in tasks:
             if task["task_id"] == task_id:
                 return Task(
@@ -62,20 +64,23 @@ def get_task(task_id, task_file_path):
                     assignee=task["assignee"],
                     dependencies=task.get("dependencies", []),
                 )
-    print(f"Error: Task with ID {task_id} not found.")
-    return None
+    raise ValueError(f"Task with ID {task_id} not found.")
 
 def update_task_file(task, task_file_path):
     if not os.path.exists(task_file_path):
-        print("Error: Task file does not exist.")
-        return
+        raise FileNotFoundError(f"Task file {task_file_path} does not exist.")
     with open(task_file_path, "r+") as file:
-        tasks = json.load(file)
+        try:
+            tasks = json.load(file)
+        except json.JSONDecodeError:
+            raise ValueError(f"Invalid JSON in {task_file_path}.")
         tasks.append(task.__dict__)
         file.seek(0)
         file.truncate()
         json.dump(tasks, file)
 
 def create_task(task_id, description, deadline, priority, assignee, dependencies):
+    if not all([task_id, description, deadline, priority, assignee, dependencies]):
+        raise ValueError("All task attributes must be provided.")
     new_task = Task(task_id, description, deadline, priority, assignee, dependencies)
     update_task_file(new_task, "tasks.json")
