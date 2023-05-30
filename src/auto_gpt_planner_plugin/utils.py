@@ -8,6 +8,7 @@ tokenizer = tokenizers.ByteLevelBPETokenizer()
 
 completion_tokens = prompt_tokens = 0
 
+# Set up OpenAI API key and base URL
 api_key = os.getenv("OPENAI_API_KEY", "")
 if api_key != "":
     openai.api_key = api_key
@@ -22,7 +23,7 @@ if api_base != "":
 @backoff.on_exception(backoff.expo, openai.error.OpenAIError)
 def completions_with_backoff(**kwargs):
     """
-    Generate text using the OpenAI API.
+    Generate text using the OpenAI API with exponential backoff in case of errors.
 
     Args:
         **kwargs: A dictionary of keyword arguments to pass to the OpenAI API.
@@ -152,6 +153,15 @@ def chatgpt(messages, model="gpt-4", temperature=0.7, max_tokens=1000, n=1, stop
     return outputs
 
 def gpt_usage(backend="gpt-4"):
+    """
+    Calculate the cost of using the GPT model.
+
+    Args:
+        backend (str): The backend to use. Options are "gpt-4" and "gpt-3.5-turbo".
+
+    Returns:
+        dict: A dictionary containing the number of completion tokens, prompt tokens, and the cost.
+    """
     global completion_tokens, prompt_tokens
     if backend == "gpt-4":
         cost = completion_tokens / 1000 * 0.06 + prompt_tokens / 1000 * 0.03

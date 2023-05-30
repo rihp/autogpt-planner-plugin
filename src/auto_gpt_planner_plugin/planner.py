@@ -8,14 +8,20 @@ import argparse
 
 
 class Planner:
-    """This class handles the planning functionality."""
+    """
+    This class handles the planning functionality.
+    """
 
     def __init__(self):
-        # Initialize the task manager
+        """
+        Initializes the Planner class and creates a new instance of the TaskManager.
+        """
         self.task_manager = TaskManager()
 
     def run_planning_cycle(self):
-        # Generate a plan
+        """
+        Runs a planning cycle which includes generating a plan, creating tasks from the plan, and executing the tasks.
+        """
         plan = self.generate_plan()
 
         # Create tasks based on the plan
@@ -26,12 +32,22 @@ class Planner:
             self.task_manager.execute_task(task)
 
     def generate_plan(self):
-        # For this example, let's say a plan is just a list of task descriptions
+        """
+        Generates a plan. In this example, a plan is a list of task descriptions.
+        Returns:
+            plan (list): A list of task descriptions.
+        """
         plan = ["Task 1", "Task 2", "Task 3"]
         return plan
 
     def create_tasks_from_plan(self, plan):
-        # For this example, let's say a task is just a dictionary with a task_id and a task_description
+        """
+        Creates tasks based on the provided plan.
+        Args:
+            plan (list): A list of task descriptions.
+        Returns:
+            tasks (list): A list of Task objects.
+        """
         tasks = []
         for i, task_description in enumerate(plan):
             task = Task(
@@ -48,8 +64,12 @@ class Planner:
 
     def solve_task(self, task_id):
         """
-        Solve a task using the solve function from the first script.
-        This function takes a task ID as input.
+        Solves a task using the solve function.
+        Args:
+            task_id (int): The ID of the task to be solved.
+        Returns:
+            ys (list): The solution to the task.
+            info (dict): Information about the steps taken to solve the task.
         """
         # Get the task
         task = self.session.query(Task).filter_by(task_id=task_id).first()
@@ -63,6 +83,17 @@ class Planner:
         return ys, info
 
     def solve(self, args, task, idx, to_print=True):
+        """
+        Solves a task.
+        Args:
+            args (argparse.Namespace): The arguments for the planner.
+            task (Task): The task to be solved.
+            idx (int): The index of the task.
+            to_print (bool, optional): Whether to print the steps taken to solve the task. Defaults to True.
+        Returns:
+            ys (list): The solution to the task.
+            info (dict): Information about the steps taken to solve the task.
+        """      
         print(gpt)
         x = task.get_inputx  # input
         ys = ['']  # current output candidates
@@ -102,7 +133,11 @@ class Planner:
         return ys, {'steps': infos}
 
 def parse_args():
-    """Parse the arguments for the planner."""
+    """
+    Parses the arguments for the planner.
+    Returns:
+        args (argparse.Namespace): The arguments for the planner.
+    """
     args = argparse.ArgumentParser()
     args.add_argument('--backend', type=str, choices=['gpt-4', 'gpt-3.5-turbo'], default='gpt-4')
     args.add_argument('--temperature', type=float, default=0.7)
@@ -126,6 +161,9 @@ def parse_args():
     return args
 
 if __name__ == '__main__':
+    """
+    If this script is run as the main script, it creates a new Planner and runs a planning cycle.
+    """
     planner = Planner()
     planner.run_planning_cycle()
 

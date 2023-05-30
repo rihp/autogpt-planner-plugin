@@ -4,47 +4,63 @@ from .models import Task, Base, engine
 import json
 import datetime
 
-
 class TaskManager:
+    """
+    This class manages tasks in a SQLite database using SQLAlchemy. 
+    It provides methods to create, execute, retrieve, and delete tasks, as well as to generate a report of tasks.
+    """
 
     def __init__(self):
-        """Initialize the task manager."""
-        # Initialize the database session
+        """
+        Initialize the task manager by creating a new session with the database engine.
+        """
         self.session = Session(engine)
 
     def create_task(self, task_id, task_description):
-        """Create a task."""
+        """
+        Create a new task in the database with the given ID and description.
+        """
         task = Task(task_id=task_id, description=task_description)
-        # Add the task to the database
         self.session.add(task)
         self.session.commit()
 
     def execute_task(self, task_id):
-        """Execute a task."""
+        """
+        Mark a task as completed in the database.
+        """
         task = self.get_task_by_id(task_id)
-        # Update the task status to mark it as completed
         task.completed = True
         self.session.commit()
 
     def get_task_by_id(self, task_id):
-        """Get a task by its ID."""
+        """
+        Retrieve a task from the database by its ID.
+        """
         return self.session.query(Task).filter_by(task_id=task_id).first()
 
     def get_incomplete_tasks(self):
-        """Get all tasks that are not yet completed."""
+        """
+        Retrieve all tasks from the database that have not been completed.
+        """
         return self.session.query(Task).filter_by(completed=False).all()
 
     def get_tasks_by_priority(self, priority):
-        """Get all tasks with a specific priority."""
+        """
+        Retrieve all tasks from the database with a specific priority.
+        """
         return self.session.query(Task).filter_by(priority=priority).all()
 
     def get_task_file_path(self):
-        """Get the path of the tasks.json file."""
+        """
+        Get the path of the tasks.json file.
+        """
         current_working_directory = os.getcwd()
         return os.path.join(current_working_directory, "autogpt", "auto_gpt_workspace", "tasks.json")
 
     def load_tasks(self):
-        """Load tasks from the tasks file."""
+        """
+        Load tasks from the tasks.json file.
+        """
         file_name = self.get_task_file_path()
 
         if os.path.exists(file_name):
@@ -52,14 +68,18 @@ class TaskManager:
                 self.tasks = json.load(f)
 
     def save_tasks(self):
-        """Save tasks to the tasks file."""
+        """
+        Save tasks to the tasks.json file.
+        """
         file_name = self.get_task_file_path()
 
         with open(file_name, "w") as f:
             json.dump(self.tasks, f, indent=4)
 
     def add_task(self, task_id=None, task_description=None, deadline=None, priority=None, assignee=None):
-        """Add a task to the task manager."""
+        """
+        Add a task to the task manager.
+        """
         task = {
             "task_id": task_id if task_id is not None else self.task_counter,
             "task_description": task_description if task_description is not None else "No description",
@@ -80,7 +100,9 @@ class TaskManager:
             self.save_tasks()
 
     def add_tasks(self, task_list):
-        """Adds multiple tasks to the task manager."""
+        """
+        Adds multiple tasks to the task manager.
+        """
         for task in task_list:
             if not task.get('completed', False):
                 self.add_task(**task)
@@ -91,21 +113,27 @@ class TaskManager:
             self.save_tasks()
 
     def update_task_status(self, task_id, **kwargs):
-        """Updates the status of a task in the task manager."""
+        """
+        Updates the status of a task in the task manager.
+        """
         for task in self.tasks:
             if task["task_id"] == task_id:
                 task.update(kwargs)
         self.save_tasks()
 
     def delete_task(self, task_id):
-        """Deletes a task from the task manager."""
+        """
+        Deletes a task from the task manager.
+        """
         for task in self.tasks:
             if task["task_id"] == task_id:
                 self.tasks.remove(task)
         self.save_tasks()
 
     def generate_report(self):
-        """Generates a report of the tasks."""
+        """
+        Generates a report of the tasks.
+        """
         report = {
             "total_tasks": len(self.tasks),
             "completed_tasks": len([t for t in self.tasks if t["completed"]]),
@@ -126,7 +154,9 @@ class TaskManager:
         return report
 
     def validate_task(self, task):
-        """Validates a task before adding it to the task manager."""
+        """
+        Validates a task before adding it to the task manager.
+        """
         required_fields = ["task_id", "task_description", "completed", "progress"]
 
         for field in required_fields:
@@ -169,6 +199,7 @@ if __name__ == "__main__":
         "priority": "high",
         "assignee": "Bard",
     }
+
     task_manager.add_task(task)
 
     # Get the task by its ID
