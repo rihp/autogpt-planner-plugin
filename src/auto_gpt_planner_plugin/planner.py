@@ -1,3 +1,26 @@
+"""
+This class handles the planning functionality.
+
+Args:
+    --backend: The name of the OpenAI API backend to use.
+    --temperature: The temperature of the OpenAI API.
+    --task: The name of the task to solve.
+    --task_file_path: The path to the file that contains the task description.
+    --task_start_index: The index of the first task to solve.
+    --task_end_index: The index of the last task to solve.
+    --naive_run: If True, the planner will run in a naive mode. This mode is not as efficient as the non-naive mode, but it is easier to understand.
+    --prompt_sample: The prompt to use when generating samples.
+    --method_generate: The method to use for generating samples.
+    --method_evaluate: The method to use for evaluating samples.
+    --method_select: The method to use for selecting samples.
+    --n_generate_sample: The number of samples to generate.
+    --n_evaluate_sample: The number of samples to evaluate.
+    --n_select_sample: The number of samples to select.
+
+Returns:
+    - The list of solutions to the tasks.
+"""
+
 import os
 import argparse
 import numpy as np
@@ -10,7 +33,7 @@ import itertools
 class Planner:
     """This class handles the planning functionality."""
 
-    def __init__(self):
+    def __init__(self, args):
         # Set the model and maximum tokens for the OpenAI API
         self.MODEL = self.get_env_var('PLANNER_MODEL', self.get_env_var('FAST_LLM_MODEL', 'gpt-3.5-turbo'))
         self.MAX_TOKENS = int(self.get_env_var('PLANNER_TOKEN_LIMIT', '4096'))
@@ -21,81 +44,33 @@ class Planner:
         """Get the value of an environment variable or return a default value if it is not set."""
         return os.getenv(var_name, default_value)
 
-    def get_plan_file_path(self):
-        """Get the path of the plan.md file."""
-        current_working_directory = os.getcwd()
-        return os.path.join(current_working_directory, "autogpt", "auto_gpt_workspace", "plan.md")
+    def run_planning_cycle(self):
+        # Generate a plan
+        plan = self.generate_plan()
 
-    def check_plan(self):
-        """
-        Check if the plan.md file exists in the specified directory,
-        if it doesn't exist, a new one is created with a default content.
-        """
-        file_name = self.get_plan_file_path()
+        # Create tasks based on the plan
+        tasks = self.create_tasks_from_plan(plan)
 
-        if not os.path.exists(file_name):
-            # Create and write the default content to the plan.md file if it does not exist
-            try:
-                with open(file_name, "w") as file:
-                    file.write(
-                        """
-                        # Task List and status:
-                        - [ ] Create a detailed checklist for the current plan and goals
-                        - [ ] Finally, review that every new task is completed
-
-                        ## Notes:
-                        - Use the run_planning_cycle command frequently to keep this plan up to date.
-                        """
-                    )
-                print(f"{file_name} created.")
-            except Exception as e:
-                print(f"Failed to create {file_name}: {e}")
-                return None
-
-        # Read the existing or newly created plan.md file
-        try:
-            with open(file_name, "r") as file:
-                return file.read()
-        except Exception as e:
-            print(f"Failed to read {file_name}: {e}")
-            return None
-
-    def update_plan(self):
-        """
-        Update the existing plan based on task status and generate an improved plan.
-        Incorporate the best solution from the Tree of Thoughts of each task into the plan.
-        """
-        file_name = self.get_plan_file_path()
-
-        # Read the existing plan.md file
-        try:
-            with open(file_name, 'r') as file:
-                data = file.read()
-        except Exception as e:
-            print(f"Failed to read {file_name}: {e}")
-            return None
-
-        # Generate an improved plan
-        response = self.generate_improved_plan(data)
-
-        # Incorporate the best solution from the Tree of Thoughts of each task into the plan
-        tasks = self.task_manager.get_tasks()
+        # Execute the tasks
         for task in tasks:
-            problem = task["task_description"]
-            tree_of_thoughts = self.generate_tree_of_thoughts(problem)
-            best_solution = self.evaluate_tree_of_thoughts(tree_of_thoughts)
-            response += f"\nBest solution for task '{task['task_id']}': {best_solution}"
+            self.task_manager.create_task(task)
+            self.task_manager.execute_task(task)
 
-        # Write the improved plan to the plan.md file
-        try:
-            with open(file_name, "w") as file:
-                file.write(response)
-            print(f"{file_name} updated.")
-        except Exception as e:
-            print(f"Failed to update {file_name}: {e}")
-            return None
+    def generate_plan(self):
+        # For this example, let's say a plan is just a list of task descriptions
+        plan = ["Task 1", "Task 2", "Task 3"]
+        return plan
 
-        return response
+    def create_tasks_from_plan(self, plan):
+        # For this example, let's say a task is just a dictionary with a task_id and a task_description
+        tasks = []
+        for i, task_description in enumerate(plan):
+            task = {
+                "task_id": str(i),
+                "task_description": task_description
+            }
+            tasks.append(task)
+        return tasks
 
     def solve_task(self, task_id, task_file_path, i):
         """
@@ -120,7 +95,7 @@ class Planner:
 
     def solve(self, args, task, idx, to_print=True):
         print(gpt)
-        x = task.get_input(idx)  # input
+        x = task.get_inputx  # input
         ys = ['']  # current output candidates
         infos = []
         for step in range(task.steps):
@@ -157,31 +132,31 @@ class Planner:
             print(ys)
         return ys, {'steps': infos}
 
-    def parse_args(self):
-        args = argparse.ArgumentParser()
-        args.add_argument('--backend', type=str, choices=['gpt-4', 'gpt-3.5-turbo'], default='gpt-4')
-        args.add_argument('--temperature', type=float, default=0.7)
+def parse_args():
+    """Parse the arguments for the planner."""
+    args = argparse.ArgumentParser()
+    args.add_argument('--backend', type=str, choices=['gpt-4', 'gpt-3.5-turbo'], default='gpt-4')
+    args.add_argument('--temperature', type=float, default=0.7)
 
-        args.add_argument('--task', type=str, required=True, choices=['game24', 'text', 'crosswords'])
-        args.add_argument('--task_file_path', type=str, required=True)
-        args.add_argument('--task_start_index', type=int, default=900)
-        args.add_argument('--task_end_index', type=int, default=1000)
+    args.add_argument('--task', type=str, required=True, choices=['game24', 'text', 'crosswords'])
+    args.add_argument('--task_file_path', type=str, required=True)
+    args.add_argument('--task_start_index', type=int, default=900)
+    args.add_argument('--task_end_index', type=int, default=1000)
 
-        args.add_argument('--naive_run', action='store_true')
-        args.add_argument('--prompt_sample', type=str, choices=['standard', 'cot'])  # only used when method_generate = sample, or naive_run
+    args.add_argument('--naive_run', action='store_true')
+    args.add_argument('--prompt_sample', type=str, choices=['standard', 'cot'])  # only used when method_generate = sample, or naive_run
 
-        args.add_argument('--method_generate', type=str, choices=['sample', 'propose'])
-        args.add_argument('--method_evaluate', type=str, choices=['value', 'vote'])
-        args.add_argument('--method_select', type=str, choices=['sample', 'greedy'])
-        args.add_argument('--n_generate_sample', type=int, default=1)  # only thing needed if naive_run
-        args.add_argument('--n_evaluate_sample', type=int, default=1)
-        args.add_argument('--n_select_sample', type=int, default=1)
+    args.add_argument('--method_generate', type=str, choices=['sample', 'propose'])
+    args.add_argument('--method_evaluate', type=str, choices=['value', 'vote'])
+    args.add_argument('--method_select', type=str, choices=['sample', 'greedy'])
+    args.add_argument('--n_generate_sample', type=int, default=1)  # only thing needed if naive_run
+    args.add_argument('--n_evaluate_sample', type=int, default=1)
+    args.add_argument('--n_select_sample', type=int, default=1)
 
-        args = args.parse_args()
-        return args
+    args = args.parse_args()
+    return args
 
 if __name__ == '__main__':
     planner = Planner()
-    args = planner.parse_args()
-    print(args)
-    planner.run(args)
+    planner.run_planning_cycle()
+

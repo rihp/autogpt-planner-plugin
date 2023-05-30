@@ -21,10 +21,20 @@ if api_base != "":
 
 @backoff.on_exception(backoff.expo, openai.error.OpenAIError)
 def completions_with_backoff(**kwargs):
+    """
+    Generate text using the OpenAI API.
+
+    Args:
+        **kwargs: A dictionary of keyword arguments to pass to the OpenAI API.
+
+    Returns:
+        A list of generated text.
+    """
     return openai.ChatCompletion.create(**kwargs)
 
 def process_response(response):
-    """Processes the response by chunking it based on token limits.
+    """
+    Process the response by chunking it based on token limits.
 
     Args:
         response (str): The response to be processed.
@@ -35,11 +45,11 @@ def process_response(response):
     MAX_TOKENS = 4096
     CONTEXT_MARKER = ""
     tokens = tokenizer.encode(response)
-    
+
     if len(tokens) > MAX_TOKENS:
         chunks = []
         current_chunk_tokens = []
-        
+
         for token in tokens:
             if len(current_chunk_tokens) + 1 <= MAX_TOKENS:
                 current_chunk_tokens.append(token)
@@ -47,19 +57,20 @@ def process_response(response):
                 # Add contextual marker at the end of the chunk
                 current_chunk_tokens.append(tokenizer.encode(CONTEXT_MARKER))
                 chunks.append(tokenizer.decode(current_chunk_tokens))
-                
+
                 # Add contextual marker at the beginning of the next chunk
                 current_chunk_tokens = [tokenizer.encode(CONTEXT_MARKER), token]
-        
+
         if current_chunk_tokens:
             chunks.append(tokenizer.decode(current_chunk_tokens))
-        
+
         return chunks
     else:
         return [response]
 
 def process_input_messages(messages):
-    """Processes the input messages by chunking them based on token limits.
+    """
+    Process the input messages by chunking them based on token limits.
 
     Args:
         messages (list): The list of messages to be processed.
@@ -96,10 +107,38 @@ def process_input_messages(messages):
     return message_chunks
 
 def gpt(prompt, model="gpt-4", temperature=0.7, max_tokens=1000, n=1, stop=None) -> list:
+    """
+    Generate text using the OpenAI API.
+
+    Args:
+        prompt (str): The prompt to use for generating text.
+        model (str): The model to use for generating text.
+        temperature (float): The temperature to use for generating text.
+        max_tokens (int): The maximum number of tokens to generate.
+        n (int): The number of generations to perform.
+        stop (str): A string that, if encountered, will cause the generation to stop.
+
+    Returns:
+        A list of generated text.
+    """
     messages = [{"role": "user", "content": prompt}]
     return chatgpt(messages, model=model, temperature=temperature, max_tokens=max_tokens, n=n, stop=stop)
 
 def chatgpt(messages, model="gpt-4", temperature=0.7, max_tokens=1000, n=1, stop=None) -> list:
+    """
+    Generate text using the OpenAI API.
+
+    Args:
+        messages (list): The list of messages to use for generating text.
+        model (str): The model to use for generating text.
+        temperature (float): The temperature to use for generating text.
+        max_tokens (int): The maximum number of tokens to generate.
+        n (int): The number of generations to perform.
+        stop (str): A string that, if encountered, will cause the generation to stop.
+
+    Returns:
+        A list of generated text.
+    """
     global completion_tokens, prompt_tokens
     outputs = []
     while n > 0:
