@@ -1,48 +1,18 @@
-"""
-This class handles the planning functionality.
-
-Args:
-    --backend: The name of the OpenAI API backend to use.
-    --temperature: The temperature of the OpenAI API.
-    --task: The name of the task to solve.
-    --task_file_path: The path to the file that contains the task description.
-    --task_start_index: The index of the first task to solve.
-    --task_end_index: The index of the last task to solve.
-    --naive_run: If True, the planner will run in a naive mode. This mode is not as efficient as the non-naive mode, but it is easier to understand.
-    --prompt_sample: The prompt to use when generating samples.
-    --method_generate: The method to use for generating samples.
-    --method_evaluate: The method to use for evaluating samples.
-    --method_select: The method to use for selecting samples.
-    --n_generate_sample: The number of samples to generate.
-    --n_evaluate_sample: The number of samples to evaluate.
-    --n_select_sample: The number of samples to select.
-
-Returns:
-    - The list of solutions to the tasks.
-"""
-
-import os
-import argparse
-import numpy as np
+from sqlalchemy.orm import Session
+from .models import Task, Base, engine
 from .task_manager import TaskManager
-from .utils import gpt, gpt_usage
-from .tasks import get_task
+from .utils import gpt
 import itertools
+import numpy as np
+import argparse
 
 
 class Planner:
     """This class handles the planning functionality."""
 
-    def __init__(self, args):
-        # Set the model and maximum tokens for the OpenAI API
-        self.MODEL = self.get_env_var('PLANNER_MODEL', self.get_env_var('FAST_LLM_MODEL', 'gpt-3.5-turbo'))
-        self.MAX_TOKENS = int(self.get_env_var('PLANNER_TOKEN_LIMIT', '4096'))
+    def __init__(self):
         # Initialize the task manager
         self.task_manager = TaskManager()
-
-    def get_env_var(self, var_name, default_value):
-        """Get the value of an environment variable or return a default value if it is not set."""
-        return os.getenv(var_name, default_value)
 
     def run_planning_cycle(self):
         # Generate a plan
@@ -53,7 +23,6 @@ class Planner:
 
         # Execute the tasks
         for task in tasks:
-            self.task_manager.create_task(task)
             self.task_manager.execute_task(task)
 
     def generate_plan(self):
@@ -65,28 +34,28 @@ class Planner:
         # For this example, let's say a task is just a dictionary with a task_id and a task_description
         tasks = []
         for i, task_description in enumerate(plan):
-            task = {
-                "task_id": str(i),
-                "task_description": task_description
-            }
+            task = Task(
+                task_id=str(i),
+                description=task_description,
+                deadline=None,
+                priority=None,
+                assignee=None,
+                dependencies=None
+            )
             tasks.append(task)
+            self.task_manager.create_task(task)
         return tasks
 
-    def solve_task(self, task_id, task_file_path, i):
+    def solve_task(self, task_id):
         """
         Solve a task using the solve function from the first script.
-        This function takes a task ID and a task file path as inputs.
+        This function takes a task ID as input.
         """
-        # Parse the arguments for the solve function
-        args = self.parse_args()
-        args.task = task_id
-        args.task_file_path = task_file_path
-
         # Get the task
-        task = get_task(args.task, args.task_file_path)
+        task = self.session.query(Task).filter_by(task_id=task_id).first()
 
         # Use the solve function to solve the task
-        ys, info = self.solve(args, task, i)
+        ys, info = self.solve(task)
 
         # Update the plan with the solution
         self.update_plan(ys)

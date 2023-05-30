@@ -1,71 +1,42 @@
-"""
-This class manages tasks.
-
-Attributes:
-  tasks_file (str): The path of the tasks file.
-  tasks (list): A list of tasks.
-  task_counter (int): The next task ID.
-
-Methods:
-  __init__(self, tasks_file="tasks.json"): Initialize the task manager.
-  create_task(self, task): Create a task.
-  execute_task(self, task): Execute a task.
-  get_task_by_id(self, task_id): Get a task by its ID.
-  get_incomplete_tasks(self): Get all tasks that are not yet completed.
-  get_tasks_by_priority(self, priority): Get all tasks with a specific priority.
-  get_task_file_path(self): Get the path of the tasks.json file.
-  load_tasks(self): Load tasks from the tasks file.
-  save_tasks(self): Save tasks to the tasks file.
-  add_task(self, task_id=None, task_description=None, deadline=None, priority=None, assignee=None): Add a task to the task manager.
-  add_tasks(self, task_list): Add multiple tasks to the task manager.
-  update_task_status(self, task_id, **kwargs): Update the status of a task in the task manager.
-  delete_task(self, task_id): Delete a task from the task manager.
-  generate_report(self): Generate a report of the tasks.
-  validate_task(self, task): Validate a task before adding it to the task manager.
-"""
-
 import os
+from sqlalchemy.orm import Session
+from .models import Task, Base, engine
 import json
-from datetime import datetime
+import datetime
 
 
 class TaskManager:
 
-    def __init__(self, tasks_file="tasks.json"):
+    def __init__(self):
         """Initialize the task manager."""
-        self.tasks_file = tasks_file
-        self.tasks = []
-        self.task_counter = 0
+        # Initialize the database session
+        self.session = Session(engine)
 
-        # Load tasks from the tasks file
-        self.load_tasks()
-
-    def create_task(self, task):
+    def create_task(self, task_id, task_description):
         """Create a task."""
-        # Add the task to the task list
-        self.tasks.append(task)
-        self.save_tasks()
+        task = Task(task_id=task_id, description=task_description)
+        # Add the task to the database
+        self.session.add(task)
+        self.session.commit()
 
-    def execute_task(self, task):
+    def execute_task(self, task_id):
         """Execute a task."""
+        task = self.get_task_by_id(task_id)
         # Update the task status to mark it as completed
-        task["completed"] = True
-        self.save_tasks()
+        task.completed = True
+        self.session.commit()
 
     def get_task_by_id(self, task_id):
         """Get a task by its ID."""
-        for task in self.tasks:
-            if task["task_id"] == task_id:
-                return task
-        return None
+        return self.session.query(Task).filter_by(task_id=task_id).first()
 
     def get_incomplete_tasks(self):
         """Get all tasks that are not yet completed."""
-        return [task for task in self.tasks if not task["completed"]]
+        return self.session.query(Task).filter_by(completed=False).all()
 
     def get_tasks_by_priority(self, priority):
         """Get all tasks with a specific priority."""
-        return [task for task in self.tasks if task["priority"] == priority]
+        return self.session.query(Task).filter_by(priority=priority).all()
 
     def get_task_file_path(self):
         """Get the path of the tasks.json file."""

@@ -35,10 +35,10 @@ class PlannerPlugin(AutoGPTPluginTemplate):
 
         # Add commands to the prompt
         prompt.add_command("check_plan", "Read the plan.md with the next goals to achieve", {}, self.planner.check_plan)
-        prompt.add_command("run_planning_cycle", "Improves the current plan.md and updates it with progress", {}, self.planner.update_plan)
-        prompt.add_command("create_task", "creates a task with a task id, description and a completed status of False ", {"task_id": "<int>", "task_description": "<The task that must be performed>"}, self.planner.task_manager.add_task)
+        prompt.add_command("run_planning_cycle", "Improves the current plan.md and updates it with progress", {}, self.planner.run_planning_cycle)
+        prompt.add_command("create_task", "Creates a task with a task id, description and a completed status of False ", {"task_id": "<int>", "task_description": "<The task that must be performed>"}, self.planner.task_manager.create_task)
         prompt.add_command("load_tasks", "Checks out the task ids, their descriptions and a completed status", {}, self.planner.task_manager.load_tasks)
-        prompt.add_command("mark_task_completed", "Updates the status of a task and marks it as completed", {"task_id": "<int>"}, self.planner.task_manager.update_task_status)
+        prompt.add_command("mark_task_completed", "Updates the status of a task and marks it as completed", {"task_id": "<int>"}, self.planner.task_manager.execute_task)
 
         return prompt
 
