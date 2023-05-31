@@ -1,10 +1,10 @@
 import os
 import openai
 import backoff
-import tokenizers
+from transformers import GPT2Tokenizer
 
 # Global constants
-tokenizer = tokenizers.ByteLevelBPETokenizer()
+tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
 
 completion_tokens = prompt_tokens = 0
 
@@ -107,64 +107,33 @@ def process_input_messages(messages):
 
     return message_chunks
 
-def gpt(prompt, model="gpt-4", temperature=0.7, max_tokens=1000, n=1, stop=None) -> list:
+def gpt(messages, model="gpt-4", temperature=0.7, max_tokens=1000, n=1, stop=None) -> list:
     """
     Generate text using the OpenAI API.
 
     Args:
-        prompt (str): The prompt to use for generating text.
+        messages (list): The list of messages to be processed.
         model (str): The model to use for generating text.
         temperature (float): The temperature to use for generating text.
         max_tokens (int): The maximum number of tokens to generate.
         n (int): The number of generations to perform.
         stop (str): A string that, if encountered, will cause the generation to stop.
-
-    Returns:
-        A list of generated text.
+        
+        Returns:
+        list: A list of generated texts.
     """
-    messages = [{"role": "user", "content": prompt}]
-    return chatgpt(messages, model=model, temperature=temperature, max_tokens=max_tokens, n=n, stop=stop)
+    prompts = process_input_messages(messages)
+    completions = []
 
-def chatgpt(messages, model="gpt-4", temperature=0.7, max_tokens=1000, n=1, stop=None) -> list:
-    """
-    Generate text using the OpenAI API.
+    for prompt in prompts:
+        completion = completions_with_backoff(model=model, messages=[{"role": "system", "content": prompt}],
+                                              temperature=temperature, max_tokens=max_tokens, n=n, stop=stop)
+        completions.append(completion.choices[0].message.content)
 
-    Args:
-        messages (list): The list of messages to use for generating text.
-        model (str): The model to use for generating text.
-        temperature (float): The temperature to use for generating text.
-        max_tokens (int): The maximum number of tokens to generate.
-        n (int): The number of generations to perform.
-        stop (str): A string that, if encountered, will cause the generation to stop.
+    responses = []
 
-    Returns:
-        A list of generated text.
-    """
-    global completion_tokens, prompt_tokens
-    outputs = []
-    while n > 0:
-        cnt = min(n, 20)
-        n -= cnt
-        res = completions_with_backoff(model=model, messages=messages, temperature=temperature, max_tokens=max_tokens, n=cnt, stop=stop)
-        outputs.extend([choice["message"]["content"] for choice in res["choices"]])
-        # log completion tokens
-        completion_tokens += res["usage"]["completion_tokens"]
-        prompt_tokens += res["usage"]["prompt_tokens"]
-    return outputs
+    for completion in completions:
+        chunks = process_response(completion)
+        responses.extend(chunks)
 
-def gpt_usage(backend="gpt-4"):
-    """
-    Calculate the cost of using the GPT model.
-
-    Args:
-        backend (str): The backend to use. Options are "gpt-4" and "gpt-3.5-turbo".
-
-    Returns:
-        dict: A dictionary containing the number of completion tokens, prompt tokens, and the cost.
-    """
-    global completion_tokens, prompt_tokens
-    if backend == "gpt-4":
-        cost = completion_tokens / 1000 * 0.06 + prompt_tokens / 1000 * 0.03
-    elif backend == "gpt-3.5-turbo":
-        cost = (completion_tokens + prompt_tokens) / 1000 * 0.0002
-    return {"completion_tokens": completion_tokens, "prompt_tokens": prompt_tokens, "cost": cost}
+    return responses

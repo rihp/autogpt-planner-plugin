@@ -20,16 +20,11 @@ class Planner:
 
     def run_planning_cycle(self):
         """
-        Runs a planning cycle which includes generating a plan, creating tasks from the plan, and executing the tasks.
+        Run a planning cycle to create tasks based on the plan.
         """
-        plan = self.generate_plan()
-
-        # Create tasks based on the plan
-        tasks = self.create_tasks_from_plan(plan)
-
-        # Execute the tasks
-        for task in tasks:
-            self.task_manager.execute_task(task)
+        plan = self.load_plan()  # Load the plan from a file or other source
+        tasks = self.task_manager.create_tasks(plan)  # Create tasks based on the plan
+        self.update_progress(tasks)  # Update the progress of the tasks
 
     def generate_plan(self):
         """
@@ -51,12 +46,11 @@ class Planner:
         tasks = []
         for i, task_description in enumerate(plan):
             task = Task(
-                task_id=str(i),
+                id=str(i),
                 description=task_description,
                 deadline=None,
                 priority=None,
-                assignee=None,
-                dependencies=None
+                assignee=None
             )
             tasks.append(task)
             self.task_manager.create_task(task)

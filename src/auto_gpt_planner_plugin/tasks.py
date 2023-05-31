@@ -43,11 +43,11 @@ class TaskService:
         except Exception as e:
             logger.error(f"Failed to save task with ID {task.task_id}: {e}")
 
-    def create_task(self, task_id, description, deadline, priority, assignee, dependencies):
+    def create_task(self, description, deadline=None, priority=None, assignee=None, dependencies=None):
         """
         Create a new task and save it to the database.
         """
-        new_task = Task(task_id=task_id, description=description, deadline=deadline, priority=priority, assignee=assignee, dependencies=dependencies)
+        new_task = Task(description=description, deadline=deadline, priority=priority, assignee=assignee, dependencies=dependencies)
         self.save_task(new_task)
 
     def mark_task_completed(self, task_id):
@@ -56,8 +56,33 @@ class TaskService:
         """
         task = self.get_task(task_id)
         if task:
-            task.mark_completed()
+            task.completed = True
             self.save_task(task)
+
+    def delete_task(self, task_id):
+        """
+        Deletes a task from the task manager.
+        """
+        task = self.get_task(task_id)
+        if task:
+            self.session.delete(task)
+            self.session.commit()
+
+    def generate_report(self):
+        """
+        Generates a report of the tasks.
+        """
+        total_tasks = self.session.query(Task).count()
+        completed_tasks = self.session.query(Task).filter_by(completed=True).count()
+        incomplete_tasks = total_tasks - completed_tasks
+
+        report = {
+            "total_tasks": total_tasks,
+            "completed_tasks": completed_tasks,
+            "incomplete_tasks": incomplete_tasks,
+        }
+
+        return report
 
     def __del__(self):
         """
