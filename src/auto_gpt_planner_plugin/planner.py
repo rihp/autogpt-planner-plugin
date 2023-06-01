@@ -1,163 +1,92 @@
-from sqlalchemy.orm import Session
-from .models import Task, Base, engine
-from .task_manager import TaskManager
-from .utils import gpt
-import itertools
-import numpy as np
-import argparse
-
+from .database import DatabaseManager
+from .tasks import TaskManager
 
 class Planner:
     """
-    This class handles the planning functionality.
+    The Planner class is responsible for managing the planning process.
+    It interacts with the TaskManager to create and manage tasks, and with the DatabaseManager to interact with the databases.
     """
 
     def __init__(self):
         """
-        Initializes the Planner class and creates a new instance of the TaskManager.
+        Initializes the Planner class and creates new instances of the TaskManager and DatabaseManager.
         """
         self.task_manager = TaskManager()
+        self.database_manager = DatabaseManager()
 
-    def run_planning_cycle(self):
+    def run_initial_planning_cycle(self):
         """
-        Run a planning cycle to create tasks based on the plan.
+        Runs the initial planning cycle. This involves generating a new plan and task database, creating tasks based on the plan, and starting the execution of tasks.
         """
-        plan = self.load_plan()  # Load the plan from a file or other source
-        tasks = self.task_manager.create_tasks(plan)  # Create tasks based on the plan
-        self.update_progress(tasks)  # Update the progress of the tasks
+        # Implementation goes here
+        pass
 
-    def generate_plan(self):
+    def generate_plan_database(self):
         """
-        Generates a plan. In this example, a plan is a list of task descriptions.
-        Returns:
-            plan (list): A list of task descriptions.
+        Generates a new plan database for future use.
         """
-        plan = ["Task 1", "Task 2", "Task 3"]
-        return plan
+        # Implementation goes here
+        pass
 
-    def create_tasks_from_plan(self, plan):
+    def generate_task_database(self):
         """
-        Creates tasks based on the provided plan.
-        Args:
-            plan (list): A list of task descriptions.
-        Returns:
-            tasks (list): A list of Task objects.
+        Generates a new task database that contains all tasks available to the plugin. This database will not be overwritten.
         """
-        tasks = []
-        for i, task_description in enumerate(plan):
-            task = Task(
-                id=str(i),
-                description=task_description,
-                deadline=None,
-                priority=None,
-                assignee=None
-            )
-            tasks.append(task)
-            self.task_manager.create_task(task)
-        return tasks
+        # Implementation goes here
+        pass
 
-    def solve_task(self, task_id):
+    def generate_plan(self, goals):
         """
-        Solves a task using the solve function.
-        Args:
-            task_id (int): The ID of the task to be solved.
-        Returns:
-            ys (list): The solution to the task.
-            info (dict): Information about the steps taken to solve the task.
+        Generates a new plan based on the given goals.
         """
-        # Get the task
-        task = self.session.query(Task).filter_by(task_id=task_id).first()
+        # Implementation goes here
+        pass
 
-        # Use the solve function to solve the task
-        ys, info = self.solve(task)
-
-        # Update the plan with the solution
-        self.update_plan(ys)
-
-        return ys, info
-
-    def solve(self, args, task, idx, to_print=True):
+    def generate_tasks(self, plan):
         """
-        Solves a task.
-        Args:
-            args (argparse.Namespace): The arguments for the planner.
-            task (Task): The task to be solved.
-            idx (int): The index of the task.
-            to_print (bool, optional): Whether to print the steps taken to solve the task. Defaults to True.
-        Returns:
-            ys (list): The solution to the task.
-            info (dict): Information about the steps taken to solve the task.
-        """      
-        print(gpt)
-        x = task.get_inputx  # input
-        ys = ['']  # current output candidates
-        infos = []
-        for step in range(task.steps):
-            # generation
-            if args.method_generate == 'sample':
-                new_ys = [self.get_samples(task, x, y, args.n_generate_sample, prompt_sample=args.prompt_sample, stop=task.stops[step]) for y in ys]
-            elif args.method_generate == 'propose':
-                new_ys = [self.get_proposals(task, x, y) for y in ys]
-            new_ys = list(itertools.chain(*new_ys))
-            ids = list(range(len(new_ys)))
-            # evaluation
-            if args.method_evaluate == 'vote':
-                values = self.get_votes(task, x, new_ys, args.n_evaluate_sample)
-            elif args.method_evaluate == 'value':
-                values = self.get_values(task, x, new_ys, args.n_evaluate_sample)
+        Generates unique tasks based on the new plan.
+        """
+        # Implementation goes here
+        pass
 
-            # selection
-            if args.method_select == 'sample':
-                ps = np.array(values) / sum(values)
-                select_ids = np.random.choice(ids, size=args.n_select_sample, p=ps).tolist()
-            elif args.method_select == 'greedy':
-                select_ids = sorted(ids, key=lambda x: values[x], reverse=True)[:args.n_select_sample]
-            select_new_ys = [new_ys[select_id] for select_id in select_ids]
+    def solve_task(self, task):
+        """
+        Solves the task with the highest priority using the solve method.
+        """
+        # Implementation goes here
+        pass
 
-            # log
-            if to_print:
-                sorted_new_ys, sorted_values = zip(*sorted(zip(new_ys, values), key=lambda x: x[1], reverse=True))
-                print(f'-- new_ys --: {sorted_new_ys}\n-- sol values --: {sorted_values}\n-- choices --: {select_new_ys}\n')
+    def mark_task_complete(self, task):
+        """
+        Marks the given task as complete.
+        """
+        # Implementation goes here
+        pass
 
-            infos.append({'step': step, 'x': x, 'ys': ys, 'new_ys': new_ys, 'values': values, 'select_new_ys': select_new_ys})
-            ys = select_new_ys
+    def update_task_database(self):
+        """
+        Updates the unique task database.
+        """
+        # Implementation goes here
+        pass
 
-        if to_print:
-            print(ys)
-        return ys, {'steps': infos}
+    def complete_tasks_for_goal(self, goal):
+        """
+        Completes all tasks for a single goal.
+        """
+        # Implementation goes here
+        pass
 
-def parse_args():
-    """
-    Parses the arguments for the planner.
-    Returns:
-        args (argparse.Namespace): The arguments for the planner.
-    """
-    args = argparse.ArgumentParser()
-    args.add_argument('--backend', type=str, choices=['gpt-4', 'gpt-3.5-turbo'], default='gpt-4')
-    args.add_argument('--temperature', type=float, default=0.7)
+    def mark_goal_complete(self, goal):
+        """
+        Marks the given goal as complete.
+        """
+        # Implementation goes here
+        pass
 
-    args.add_argument('--task', type=str, required=True, choices=['game24', 'text', 'crosswords'])
-    args.add_argument('--task_file_path', type=str, required=True)
-    args.add_argument('--task_start_index', type=int, default=900)
-    args.add_argument('--task_end_index', type=int, default=1000)
-
-    args.add_argument('--naive_run', action='store_true')
-    args.add_argument('--prompt_sample', type=str, choices=['standard', 'cot'])  # only used when method_generate = sample, or naive_run
-
-    args.add_argument('--method_generate', type=str, choices=['sample', 'propose'])
-    args.add_argument('--method_evaluate', type=str, choices=['value', 'vote'])
-    args.add_argument('--method_select', type=str, choices=['sample', 'greedy'])
-    args.add_argument('--n_generate_sample', type=int, default=1)  # only thing needed if naive_run
-    args.add_argument('--n_evaluate_sample', type=int, default=1)
-    args.add_argument('--n_select_sample', type=int, default=1)
-
-    args = args.parse_args()
-    return args
-
-if __name__ == '__main__':
-    """
-    If this script is run as the main script, it creates a new Planner and runs a planning cycle.
-    """
-    planner = Planner()
-    planner.run_planning_cycle()
-
+    def update_goals(self):
+        """
+        Updates the goals to complete the overall goal.
+        """
+        # Implementation goes here
+        pass

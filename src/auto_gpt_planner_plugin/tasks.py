@@ -1,91 +1,90 @@
-from models import Task
-from database import Session
-import logging
+from sqlalchemy import create_engine, Column, Integer, String, Boolean
+from sqlalchemy.orm import sessionmaker, scoped_session
+from sqlalchemy.ext.declarative import declarative_base
 
-# Set up logging
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-handler = logging.StreamHandler()
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-handler.setFormatter(formatter)
-logger.addHandler(handler)
+Base = declarative_base()
 
-class TaskService:
+# Define the Task model
+class Task(Base):
+    __tablename__ = 'tasks'
+
+    id = Column(Integer, primary_key=True)
+    description = Column(String)
+    priority = Column(Integer)
+    completed = Column(Boolean)
+
+# TaskManager class
+class TaskManager:
     """
-    This class provides services for managing tasks in the database.
+    The TaskManager class is responsible for managing tasks. It interacts with the tasks database,
+    allowing for tasks to be created, updated, and retrieved.
     """
-    def __init__(self):
-        """
-        Initialize the TaskService with a database session.
-        """
-        self.session = Session()
 
-    def get_task(self, task_id):
+    def __init__(self, db_path):
         """
-        Retrieve a task by its ID from the database.
-        """
-        try:
-            task = self.session.query(Task).filter_by(task_id=task_id).first()
-            logger.info(f"Retrieved task with ID {task_id}")
-            return task
-        except Exception as e:
-            logger.error(f"Failed to retrieve task with ID {task_id}: {e}")
-            return None
+        Initialize a new TaskManager instance.
 
-    def save_task(self, task):
+        Args:
+            db_path (str): The path to the SQLite database file.
         """
-        Save a task to the database.
-        """
-        try:
-            self.session.add(task)
-            self.session.commit()
-            logger.info(f"Saved task with ID {task.task_id}")
-        except Exception as e:
-            logger.error(f"Failed to save task with ID {task.task_id}: {e}")
+        self.engine = create_engine('sqlite:///' + db_path)
+        Base.metadata.create_all(self.engine)
+        self.Session = scoped_session(sessionmaker(bind=self.engine))
 
-    def create_task(self, description, deadline=None, priority=None, assignee=None, dependencies=None):
+    def create_task(self, task):
         """
-        Create a new task and save it to the database.
-        """
-        new_task = Task(description=description, deadline=deadline, priority=priority, assignee=assignee, dependencies=dependencies)
-        self.save_task(new_task)
+        Create a new task in the database.
 
-    def mark_task_completed(self, task_id):
+        Args:
+            task (Task): The task to be added to the database.
         """
-        Mark a task as completed.
+        session = self.Session()
+        session.add(task)
+        session.commit()
+
+    def mark_task_complete(self, task_id):
         """
-        task = self.get_task(task_id)
-        if task:
+        Mark a task as complete in the database.
+
+        Args:
+            task_id (int): The ID of the task to be marked as complete.
+        """
+        session = self.Session()
+        task = session.query(Task).filter_by(id=task_id).first()
+        task.completed = True
+        session.commit()
+
+    def get_highest_priority_task(self):
+        """
+        Retrieve the highest priority task from the database.
+
+        Returns:
+            Task: The highest priority task.
+        """
+        session = self.Session()
+        task = session.query(Task).filter_by(completed=False).order_by(Task.priority.desc()).first()
+        return task
+
+    def complete_tasks_for_goal(self, goal_id):
+        """
+        Complete all tasks associated with a single goal.
+
+        Args:
+            goal_id (int): The ID of the goal.
+        """
+        session = self.Session()
+        tasks = session.query(Task).filter_by(goal_id=goal_id).all()
+        for task in tasks:
             task.completed = True
-            self.save_task(task)
+        session.commit()
 
-    def delete_task(self, task_id):
+    def update_goals_for_overall_goal(self, overall_goal_id):
         """
-        Deletes a task from the task manager.
-        """
-        task = self.get_task(task_id)
-        if task:
-            self.session.delete(task)
-            self.session.commit()
+        Update the goals in the plan database to complete the overall goal.
 
-    def generate_report(self):
+        Args:
+            overall_goal_id (int): The ID of the overall goal.
         """
-        Generates a report of the tasks.
-        """
-        total_tasks = self.session.query(Task).count()
-        completed_tasks = self.session.query(Task).filter_by(completed=True).count()
-        incomplete_tasks = total_tasks - completed_tasks
-
-        report = {
-            "total_tasks": total_tasks,
-            "completed_tasks": completed_tasks,
-            "incomplete_tasks": incomplete_tasks,
-        }
-
-        return report
-
-    def __del__(self):
-        """
-        Close the database session when the TaskService is deleted.
-        """
-        self.session.close()
+        # This method will depend on how your goals are structured in your database.
+        # You'll need to implement this method based on your specific requirements.
+        pass
