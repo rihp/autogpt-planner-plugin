@@ -1,54 +1,142 @@
 import json
 import os
+from pathlib import Path
 
 
-def check_plan():
-    """this function checks if the file plan.md exists, if it doesn't exist it gets created"""
+#===================================================================================================
+# Centralized functions for loading plan.md and tasks.json
+#===================================================================================================
+def get_plan_filepath():
+    """This function checks if the file plan.md exists, if it doesn't exist it gets created"""
+    cwd = Path.cwd()
+    plan_filepath = cwd / "autogpt" / "auto_gpt_workspace" / "plan.md"
+    
+    # Create the plan.md file if it doesn't exist
+    plan_filepath.parent.mkdir(parents=True, exist_ok=True)
+    plan_filepath.touch(exist_ok=True)
+    return plan_filepath
 
-    current_working_directory = os.getcwd()
-    workdir = os.path.join(
-        current_working_directory, "autogpt", "auto_gpt_workspace", "plan.md"
-    )
+def get_task_filepath():
+    """This function checks if the file tasks.json exists, if it doesn't exist it gets created"""
+    cwd = Path.cwd()
+    task_filepath = cwd / "autogpt" / "auto_gpt_workspace" / "tasks.json"
+    
+    # Create the tasks.json file if it doesn't exist
+    task_filepath.parent.mkdir(parents=True, exist_ok=True)
+    task_filepath.touch(exist_ok=True)
+    return task_filepath
+#===================================================================================================
 
-    file_name = workdir
-
-    if not os.path.exists(file_name):
-        with open(file_name, "w") as file:
-            file.write(
-                """
-                # Task List and status:
-                - [ ] Create a detailed checklist for the current plan and goals
-                - [ ] Finally, review that every new task is completed
+#===================================================================================================
+#===================================================================================================
+# Centralized functions for loading plan.md and tasks.json and returning the current contents
+#===================================================================================================
+def get_plan() -> str:
+    """"This function returns the current plan in the plan.md file"""
+    plan_filepath = get_plan_filepath()
+    plan = plan_filepath.read_text()
+    
+    if not plan:
+        tasks = get_tasks()
+        plan = "\n# Task List and status:\n"
+        
+        for task_id, task in tasks.items():
+            if task[1]:
+                plan += f"- [x] {task_id}: {task[0]}\n"
+            else:
+                plan += f"- [ ] {task_id}: {task[0]}\n"
                 
-                ## Notes:
-                - Use the run_planning_cycle command frequently to keep this plan up to date.
-                        """
-            )
-        print(f"{file_name} created.")
+        plan += (
+            "\n## Notes:\n"
+            "- Use the run_planning_cycle command frequently to keep this plan up to date."
+        )
+        plan_filepath.write_text(plan)
+    return plan
 
-    with open(file_name, "r") as file:
-        return file.read()
+def check_plan() -> str:
+    """(Legacy) Alias for get_plan."""
+    return get_plan()
+
+def get_tasks() -> dict[str: list[str, bool]]:
+    """This function returns the current tasks in the tasks.json file"""
+    task_filepath = get_task_filepath()
+    try:
+        tasks = json.load(task_filepath.open("r"))
+    except json.JSONDecodeError:
+        print(f"Error loading tasks from {task_filepath}. Resetting tasks.")
+        tasks = {}
+        
+    if not tasks:
+        tasks = {
+            "0": ["Create a detailed checklist for the current plan and goals", False],
+            "1": ["Review that every new task is completed", False],
+        }
+        json.dump(tasks, task_filepath.open("w"))
+        
+    return tasks
+
+def load_tasks() -> dict[str: list[str, bool]]:
+    """(Legacy) Alias for get_tasks."""
+    return get_tasks()
+#===================================================================================================
+
+#===================================================================================================
+#===================================================================================================
+# Functions for creating tasks and marking them as completed
+#===================================================================================================
+def create_task(task_id: int|None =None, task_description: str=None, status=False):
+    """This function creates a task in the tasks.json file."""
+    if (task_id in (None, "None") or task_id not in (0, "0")) and not task_id:
+        tasks = get_tasks()
+        highest_task_id = max(int(key) for key in tasks.keys())
+        task_id = highest_task_id + 1
+    else:
+        try:
+            task_id = int(task_id)
+        except ValueError:
+            raise ValueError("task_id must be an integer.")
+        
+    if task_description is None:
+        raise ValueError("task_description cannot be None.")
+    
+    tasks[str(task_id)] = [task_description, (status==True or status=="True")]
+    json.dump(tasks, get_task_filepath().open("w"))
+    return tasks
+
+def mark_task_as_completed(task_id: int):
+    """This function marks a task as completed in the tasks.json file"""
+    tasks = get_tasks()
+    
+    if str(task_id) not in tasks:
+        print(f"Task with ID {task_id} not found.")
+        return
+    
+    tasks[str(task_id)] = [tasks[str(task_id)][0], True]
+    json.dump(tasks, get_task_filepath().open("w"))
+    return f"Task with ID {task_id} has been marked as completed."
+    
+def update_task_status(task_id):
+    """(Legacy) Alias for mark_task_as_completed."""
+    return mark_task_as_completed(task_id)
+#===================================================================================================
 
 
+#===================================================================================================
+# Functions for updating the plan.md file
+#===================================================================================================
 def update_plan():
     """this function checks if the file plan.md exists, if it doesn't exist it gets created"""
 
-    current_working_directory = os.getcwd()
-    workdir = os.path.join(current_working_directory, 'autogpt', 'auto_gpt_workspace', 'plan.md')
+    plan_filepath = get_plan_filepath()
+    plan = check_plan()
 
-    file_name = workdir
-
-    with open(file_name, 'r') as file:
-        data = file.read()
-
-    response = generate_improved_plan(data)
-
-    with open(file_name, "w") as file:
-        file.write(response)
-    print(f"{file_name} updated.")
-
-    return response
-
+    improved_plan = generate_improved_plan(plan)
+    if improved_plan:
+        plan_filepath.write_text(improved_plan)
+        
+    print(f"{plan_filepath} updated.")
+    print(f"New plan:\n{improved_plan}")
+    return improved_plan
 
 def generate_improved_plan(prompt: str) -> str:
     """Generate an improved plan using OpenAI's ChatCompletion functionality"""
@@ -85,63 +173,4 @@ def generate_improved_plan(prompt: str) -> str:
     # Extract the improved plan from the response
     improved_plan = response.choices[0].message.content.strip()
     return improved_plan
-
-
-def create_task(task_id=None, task_description: str = None, status=False):
-    task = {"description": task_description, "completed": status}
-    tasks = load_tasks()
-    tasks[str(task_id)] = task
-
-    current_working_directory = os.getcwd()
-    workdir = os.path.join(
-        current_working_directory, "autogpt", "auto_gpt_workspace", "tasks.json"
-    )
-    file_name = workdir
-
-    with open(file_name, "w") as f:
-        json.dump(tasks, f)
-
-    return tasks
-
-
-def load_tasks() -> dict:
-    current_working_directory = os.getcwd()
-    workdir = os.path.join(
-        current_working_directory, "autogpt", "auto_gpt_workspace", "tasks.json"
-    )
-    file_name = workdir
-
-    if not os.path.exists(file_name):
-        with open(file_name, "w") as f:
-            f.write("{}")
-
-    with open(file_name) as f:
-        try:
-            tasks = json.load(f)
-            if isinstance(tasks, list):
-                tasks = {}
-        except json.JSONDecodeError:
-            tasks = {}
-
-    return tasks
-
-
-def update_task_status(task_id):
-    tasks = load_tasks()
-
-    if str(task_id) not in tasks:
-        print(f"Task with ID {task_id} not found.")
-        return
-
-    tasks[str(task_id)]["completed"] = True
-
-    current_working_directory = os.getcwd()
-    workdir = os.path.join(
-        current_working_directory, "autogpt", "auto_gpt_workspace", "tasks.json"
-    )
-    file_name = workdir
-
-    with open(file_name, "w") as f:
-        json.dump(tasks, f)
-
-    return f"Task with ID {task_id} has been marked as completed."
+#===================================================================================================
