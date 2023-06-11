@@ -1,0 +1,5 @@
+{
+    "python.analysis.extraPaths": [
+        "./src/auto_gpt_planner_plugin"
+    ]
+}
